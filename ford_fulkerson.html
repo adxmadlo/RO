@@ -1,0 +1,1217 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ford-Fulkerson — Flots Maximaux</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+      rel="stylesheet">
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"
+      rel="stylesheet">
+    <script
+      src="https://cdn.jsdelivr.net/npm/cytoscape@3.28.1/dist/cytoscape.min.js"></script>
+    <style>
+:root{
+  --bg:#f8f9fa;--white:#fff;--border:#dee2e6;--border2:#c8cdd3;
+  --text:#212529;--muted:#6c757d;
+  --blue:#3b82f6;--cyan:#06b6d4;
+  --red:#ef4444;--green:#22c55e;--amber:#f59e0b;
+  --red-lt:#fef2f2;--blue-lt:#eff6ff;--amber-lt:#fffbeb;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;font-size:14px}
+
+/* ── NAV ── */
+.app-nav{background:var(--white);border-bottom:1px solid var(--border);padding:10px 20px;display:flex;align-items:center;gap:10px;position:sticky;top:0;z-index:200;height:52px}
+.nav-ib{width:30px;height:30px;border-radius:7px;background:var(--bg);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;color:var(--muted);cursor:pointer;text-decoration:none;transition:.13s;font-size:13px;flex-shrink:0}
+.nav-ib:hover{background:var(--border);color:var(--text)}
+.nav-title{font-size:14.5px;font-weight:600;line-height:1.2}
+.nav-sub{font-size:11px;color:var(--muted);line-height:1.2}
+.nav-right{margin-left:auto;display:flex;gap:7px;align-items:center}
+
+/* ── PAGES ── */
+.page{display:none}
+.page.active{display:block}
+
+/* ── HOME ── */
+.home-wrap{max-width:960px;margin:0 auto;padding:34px 20px 30px}
+.home-title{font-size:28px;font-weight:900;letter-spacing:-.02em;margin-bottom:6px}
+.home-sub{color:var(--muted);font-size:13px;margin-bottom:16px}
+.net-cards{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+@media(max-width:560px){.net-cards{grid-template-columns:1fr}}
+.net-card{background:var(--white);border:1px solid var(--border);border-radius:18px;padding:28px 24px;cursor:pointer;transition:all .17s;text-align:center}
+.net-card:hover{border-color:var(--blue);box-shadow:0 4px 18px rgba(59,130,246,.12);transform:translateY(-2px)}
+.net-card:active{transform:scale(.98)}
+.nc-icon{width:70px;height:70px;border-radius:20px;display:flex;align-items:center;justify-content:center;margin:0 auto 18px;font-size:28px;color:#fff}
+.nc-icon.ex{background:linear-gradient(135deg,#06b6d4,#0891b2)}
+.nc-icon.cu{background:linear-gradient(135deg,#3b82f6,#6366f1)}
+.net-card h3{font-weight:700;margin-bottom:10px}
+.net-card p{color:var(--muted);font-size:13px;line-height:1.5}
+.saved-sec{margin-top:20px}
+.saved-title{font-size:13px;font-weight:600;margin-bottom:11px;display:flex;align-items:center;gap:6px;color:var(--muted)}
+.saved-item{background:var(--white);border:1px solid var(--border);border-radius:9px;padding:12px 15px;display:flex;align-items:center;justify-content:space-between;margin-bottom:7px;cursor:pointer;transition:.12s}
+.saved-item:hover{border-color:var(--blue);background:#f0f7ff}
+.sv-name{font-weight:600;font-size:13px}
+.sv-meta{font-size:11px;color:var(--muted);margin-top:2px}
+.saved-empty{color:var(--muted);font-size:12px;font-style:italic}
+
+/* ── CREATE ── */
+.create-wrap{max-width:720px;margin:0 auto;padding:24px 20px 60px}
+.fsect{background:var(--white);border:1px solid var(--border);border-radius:11px;padding:20px;margin-bottom:16px}
+.fsect-title{font-size:13.5px;font-weight:600;margin-bottom:14px;display:flex;align-items:center;gap:8px}
+.fsect-title i{color:var(--muted)}
+.frow{display:flex;gap:10px;flex-wrap:wrap}
+.fg{display:flex;flex-direction:column;gap:5px;flex:1;min-width:90px}
+.flbl{font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.3px}
+.flbl span{color:var(--red)}
+input,select{background:var(--white);border:1px solid var(--border2);color:var(--text);padding:8px 10px;border-radius:7px;font-size:13px;font-family:inherit;outline:none;transition:.12s;width:100%}
+input:focus,select:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(59,130,246,.1)}
+input::placeholder{color:#b0b8c4}
+.tag-wrap{display:flex;flex-wrap:wrap;gap:6px;padding:7px;border:1px solid var(--border2);border-radius:7px;min-height:40px;background:var(--white);cursor:text;align-items:center}
+.ntag{display:inline-flex;align-items:center;gap:4px;padding:3px 8px 3px 9px;border-radius:20px;font-size:11.5px;font-weight:600;background:#dbeafe;color:#1d4ed8}
+.ntag-x{cursor:pointer;opacity:.55;font-size:10px;line-height:1;margin-left:1px}.ntag-x:hover{opacity:1}
+.arc-entry{display:flex;align-items:center;gap:7px;padding:9px 11px;background:var(--bg);border-radius:7px;border:1px solid var(--border);margin-bottom:7px;flex-wrap:wrap}
+.arc-arr{color:var(--muted);font-size:16px;font-weight:700;flex-shrink:0}
+.arc-x{margin-left:auto;padding:4px 8px;border-radius:5px;border:1px solid var(--border2);background:var(--white);color:var(--muted);cursor:pointer;font-size:11.5px;transition:.11s;flex-shrink:0}
+.arc-x:hover{background:var(--red-lt);color:var(--red);border-color:var(--red)}
+.btn-add-arc{width:100%;padding:9px;border:1.5px dashed var(--border2);background:transparent;color:var(--muted);border-radius:7px;display:flex;align-items:center;justify-content:center;gap:6px;cursor:pointer;font-size:13px;font-family:inherit;transition:.12s}
+.btn-add-arc:hover{border-color:var(--blue);color:var(--blue);background:#f0f7ff}
+
+/* ── SAISIE — SPLIT LAYOUT ── */
+.saisie-page{display:none;height:calc(100vh - 52px - 34px)}
+.saisie-page.active{display:flex}
+.saisie-left{width:380px;flex-shrink:0;overflow-y:auto;padding:18px 16px 60px;border-right:1px solid var(--border);background:var(--white)}
+.saisie-right{flex:1;display:flex;flex-direction:column;overflow:hidden;background:var(--bg)}
+@media(max-width:900px){
+  .saisie-page{flex-direction:column;height:auto}
+  .saisie-left{width:100%;border-right:none;border-bottom:1px solid var(--border);padding:16px}
+  .saisie-right{height:420px}
+}
+
+/* ── KPIs ── */
+.kpi-row{display:flex;gap:8px;margin-bottom:16px}
+.kpi{background:var(--bg);border:1px solid var(--border);border-radius:9px;padding:12px 14px;flex:1;min-width:80px}
+.kpi-val{font-size:22px;font-weight:700;margin-bottom:1px}
+.kpi-lbl{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px}
+
+/* ── PATH SELECTOR ── */
+.path-card{background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:14px}
+.path-title{font-size:13px;font-weight:600;margin-bottom:8px;display:flex;align-items:center;gap:6px}
+.path-disp{background:var(--white);border:1px solid var(--border);border-radius:7px;padding:8px 12px;min-height:34px;font-size:12px;display:flex;align-items:center;flex-wrap:wrap;gap:5px;margin-bottom:9px}
+.pb{padding:2px 9px;border-radius:20px;font-size:11.5px;font-weight:600;color:#fff}
+.pb.inter{background:var(--cyan)}.pb.src{background:var(--blue)}.pb.snk{background:var(--red)}
+.pa{color:var(--muted);font-size:12px}
+.node-sel{display:flex;flex-wrap:wrap;gap:6px;padding:4px 0 8px}
+.nb{display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:50%;border:2px solid var(--border2);background:var(--white);font-weight:700;font-size:12.5px;cursor:pointer;transition:.12s;user-select:none}
+.nb:hover{border-color:var(--blue);color:var(--blue);background:#eff6ff}
+.nb.sel{border-color:var(--cyan);color:#fff;background:var(--cyan)}
+.nb.fx-src{border-color:var(--blue);color:#fff;background:var(--blue);cursor:default}
+.nb.fx-snk{border-color:var(--red);color:#fff;background:var(--red);cursor:default}
+
+/* ── DELTA BOX ── */
+.delta-box{background:linear-gradient(135deg,#fffbeb,#fef3c7);border:1px solid #fde68a;border-radius:10px;padding:11px 14px;margin-bottom:14px;display:none}
+.delta-box.show{display:block}
+.delta-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:5px}
+.delta-title{font-size:11px;font-weight:600;color:#92400e;text-transform:uppercase;letter-spacing:.4px;display:flex;align-items:center;gap:5px}
+.delta-val{font-size:22px;font-weight:800;color:#b45309}
+.delta-path{font-size:11.5px;color:#78350f;display:flex;flex-wrap:wrap;gap:3px;align-items:center}
+.dp-node{padding:1px 7px;border-radius:12px;font-size:11px;font-weight:700;color:#fff}
+.dp-src{background:#3b82f6}.dp-snk{background:#ef4444}.dp-int{background:#06b6d4}.dp-inv{background:#9333ea}
+.dp-arr{color:#b45309;font-size:10px}
+
+/* ── MARKINGS PANEL ── */
+.mk-panel{background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:14px}
+.mk-panel-title{font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px;display:flex;align-items:center;gap:5px}
+.mk-grid{display:flex;flex-direction:column;gap:4px}
+.mk-row{display:flex;align-items:center;gap:7px;padding:4px 6px;border-radius:6px;background:var(--white);border:1px solid var(--border)}
+.mk-node{font-size:12.5px;font-weight:700;color:var(--text);min-width:22px;text-align:center}
+.mk-arrow{font-size:11px;color:var(--muted);flex-shrink:0}
+.mk-labels{display:flex;flex-wrap:wrap;gap:4px;align-items:center}
+.mk-tag{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:20px;font-size:11.5px;font-weight:700}
+.mk-tag.plus{background:#dcfce7;color:#15803d;border:1px solid #86efac}
+.mk-tag.minus{background:#faf5ff;color:#7e22ce;border:1px solid #d8b4fe}
+.mk-empty{font-size:11.5px;color:var(--muted);font-style:italic}
+
+/* ── ARC TABLE ── */
+.arcs-card{background:var(--bg);border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:14px}
+.arcs-hdr{padding:10px 14px;border-bottom:1px solid var(--border);font-size:12.5px;font-weight:600;background:var(--white)}
+table{width:100%;border-collapse:collapse}
+thead th{padding:8px 12px;font-size:10.5px;font-weight:600;color:var(--muted);text-align:left;border-bottom:1px solid var(--border);background:var(--white);text-transform:uppercase;letter-spacing:.3px}
+tbody td{padding:9px 12px;border-bottom:1px solid var(--border);font-size:12.5px;vertical-align:middle;background:var(--white)}
+tbody tr:last-child td{border-bottom:none}
+tbody tr:hover td{background:#f0f7ff}
+
+/* ── GRAPH PANEL (right side) ── */
+.graph-panel-header{padding:10px 14px;background:var(--white);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.graph-panel-title{font-size:13px;font-weight:600;display:flex;align-items:center;gap:7px}
+.graph-panel-actions{display:flex;gap:6px}
+#cy-inline{flex:1;width:100%}
+.leg-bar{padding:9px 14px;background:var(--white);border-top:1px solid var(--border);display:flex;flex-wrap:wrap;gap:12px;flex-shrink:0}
+.leg-i{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--muted)}
+.leg-line{width:22px;height:3px;border-radius:2px;flex-shrink:0}
+.leg-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+
+/* ── RESULTS ── */
+.res-wrap{max-width:1000px;margin:0 auto;padding:20px 20px 60px}
+.mfbox{background:linear-gradient(135deg,#dbeafe,#ede9fe);border:1px solid #bfdbfe;border-radius:12px;padding:22px;text-align:center;margin-bottom:14px}
+.mfval{font-size:36px;font-weight:800;color:#1d4ed8;margin-bottom:4px}
+.mflbl{color:#4338ca;font-size:13px;font-weight:500}
+.cut-badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:11.5px;font-weight:600;background:#fef3c7;color:#92400e;border:1px solid #fde68a;margin:3px}
+.rsect{background:var(--white);border:1px solid var(--border);border-radius:10px;padding:18px;margin-bottom:14px}
+.rtitle{font-size:13.5px;font-weight:600;margin-bottom:12px;display:flex;align-items:center;gap:7px}
+.rtitle i{color:var(--muted)}
+.iter-row{padding:9px 13px;border-radius:7px;background:var(--bg);border:1px solid var(--border);margin-bottom:6px;font-size:12px}
+.iter-row:last-child{margin-bottom:0}
+.iter-lbl{font-weight:600;margin-bottom:2px}
+.iter-desc{color:var(--muted)}
+.res-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media(max-width:700px){.res-grid{grid-template-columns:1fr}}
+
+/* ── BADGES ── */
+.bdg{display:inline-block;padding:2px 9px;border-radius:20px;font-size:10.5px;font-weight:500}
+.bdg-n{background:#e0f2fe;color:#0284c7}.bdg-s{background:var(--red-lt);color:var(--red)}
+
+/* ── BUTTONS ── */
+.btn{display:inline-flex;align-items:center;gap:5px;padding:6px 14px;border-radius:7px;border:1px solid var(--border2);background:var(--white);color:var(--text);font-size:12.5px;font-family:inherit;font-weight:500;cursor:pointer;transition:.12s;white-space:nowrap;text-decoration:none}
+.btn:hover{background:var(--bg);border-color:#adb5bd}
+.btn:active{transform:scale(.98)}
+.btn-primary{background:var(--blue);color:#fff;border-color:var(--blue)}.btn-primary:hover{background:#2563eb}
+.btn-cyan{background:var(--cyan);color:#fff;border-color:var(--cyan)}.btn-cyan:hover{background:#0891b2}
+.btn-red{background:var(--red);color:#fff;border-color:var(--red)}.btn-red:hover{background:#dc2626}
+.btn-green{background:var(--green);color:#fff;border-color:var(--green)}.btn-green:hover{background:#16a34a}
+.btn-ghost{border-color:transparent;background:transparent;color:var(--muted)}.btn-ghost:hover{background:var(--bg);color:var(--text)}
+.btn-sm{padding:4px 10px;font-size:12px}
+.btn i{font-size:12.5px}
+
+/* ── STATUS / TOAST ── */
+.sbar{position:fixed;bottom:0;left:0;right:0;background:var(--white);border-top:1px solid var(--border);padding:6px 18px;display:flex;align-items:center;gap:9px;font-size:11px;color:var(--muted);z-index:150;height:34px}
+.sdot{width:6px;height:6px;border-radius:50%;background:var(--muted);flex-shrink:0}
+.sdot.ok{background:var(--green)}.sdot.run{background:var(--amber);animation:pulse .8s infinite}.sdot.max{background:var(--red)}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+#toast{position:fixed;bottom:40px;right:18px;background:#1e293b;color:#fff;padding:9px 14px;border-radius:8px;font-size:12px;opacity:0;transform:translateY(6px);transition:all .2s;z-index:9999;pointer-events:none;display:flex;align-items:center;gap:7px}
+#toast.show{opacity:1;transform:none}
+</style>
+  </head>
+  <body>
+
+    <!-- ══ NAV ══ -->
+    <nav class="app-nav">
+      <a href="index.html" class="nav-ib" title="Accueil RO"><i
+          class="bi bi-house"></i></a>
+      <button class="nav-ib" id="btn-back" onclick="showPage('home')"
+        style="display:none" title="Retour"><i
+          class="bi bi-arrow-left"></i></button>
+      <div>
+        <div class="nav-title" id="nav-title">Ford-Fulkerson</div>
+        <div class="nav-sub" id="nav-sub">Algorithme de Flots Maximaux</div>
+      </div>
+      <div class="nav-right">
+        <button class="btn btn-primary btn-sm" id="btn-run" onclick="runFF()"
+          style="display:none"><i class="bi bi-play-fill"></i> Exécuter
+          Marquage</button>
+        <button class="btn btn-ghost btn-sm" id="btn-res"
+          onclick="showPage('results')" style="display:none"><i
+            class="bi bi-bar-chart"></i> Résultats</button>
+        <button class="btn btn-ghost btn-sm" id="btn-chg"
+          onclick="showPage('home')" style="display:none"><i
+            class="bi bi-grid"></i> Changer réseau</button>
+      </div>
+    </nav>
+
+    <!-- ══ HOME ══ -->
+    <div class="page active" id="page-home">
+      <div class="home-wrap">
+        <div class="home-title">Ford-Fulkerson</div>
+        <div class="home-sub">Choisissez un réseau de transport à analyser</div>
+        <div class="net-cards">
+          <div class="net-card" onclick="loadExample()">
+            <div class="nc-icon ex"><i class="bi bi-book-half"></i></div>
+            <h3>Exemple du cours</h3>
+            <p>Réseau M. Gaye UCAO — 3 châteaux d'eau alimentant 4 villages (9
+              sommets, 15 arcs)</p>
+          </div>
+          <div class="net-card" onclick="showPage('create')">
+            <div class="nc-icon cu"><i class="bi bi-plus-circle"></i></div>
+            <h3>Nouveau réseau</h3>
+            <p>Définissez vos propres sommets, arcs et capacités pour créer un
+              réseau entièrement personnalisé</p>
+          </div>
+        </div>
+        <div class="saved-sec">
+          <div class="saved-title"><i class="bi bi-clock-history"></i>Réseaux
+            récents</div>
+          <div id="saved-list"><div class="saved-empty">Aucun réseau
+              sauvegardé.</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ CREATE ══ -->
+    <div class="page" id="page-create">
+      <div class="create-wrap">
+        <div class="fsect">
+          <div class="fsect-title"><i class="bi bi-pencil-square"></i>Nom du
+            réseau</div>
+          <div class="fg">
+            <div class="flbl">Nom du réseau <span>*</span></div>
+            <input id="net-name" placeholder="Ex : Réseau hydraulique ville A"
+              maxlength="60">
+          </div>
+        </div>
+        <div class="fsect">
+          <div class="fsect-title"><i class="bi bi-diagram-3"></i>Sommets</div>
+          <p
+            style="font-size:12px;color:var(--muted);margin-bottom:14px">Définissez
+            la source, le puits et les sommets intermédiaires.</p>
+          <div class="frow" style="margin-bottom:14px">
+            <div class="fg" style="max-width:160px">
+              <div class="flbl">Source <span>*</span></div>
+              <input id="node-source" placeholder="Ex : O" maxlength="6"
+                style="text-transform:uppercase">
+            </div>
+            <div class="fg" style="max-width:160px">
+              <div class="flbl">Puits <span>*</span></div>
+              <input id="node-sink" placeholder="Ex : S" maxlength="6"
+                style="text-transform:uppercase">
+            </div>
+          </div>
+          <div class="flbl" style="margin-bottom:6px">Sommets
+            intermédiaires</div>
+          <div class="tag-wrap" id="nodes-wrap"
+            onclick="document.getElementById('node-input').focus()">
+            <span id="nodes-ph"
+              style="font-size:11px;color:var(--muted);font-style:italic">Aucun
+              sommet intermédiaire</span>
+          </div>
+          <div class="frow" style="margin-top:8px">
+            <div class="fg">
+              <input id="node-input" placeholder="Code sommet (ex: A, B, 1…)"
+                maxlength="6" style="text-transform:uppercase"
+                onkeydown="if(event.key==='Enter'){event.preventDefault();addNode();}">
+            </div>
+            <button class="btn btn-sm btn-primary" onclick="addNode()"
+              style="flex-shrink:0"><i class="bi bi-plus-lg"></i>
+              Ajouter</button>
+          </div>
+          <p style="font-size:11px;color:var(--muted);margin-top:5px">Appuyez
+            sur Entrée pour ajouter rapidement</p>
+        </div>
+        <div class="fsect">
+          <div class="fsect-title"><i class="bi bi-arrow-right-circle"></i>Arcs
+            et Capacités</div>
+          <p
+            style="font-size:12px;color:var(--muted);margin-bottom:13px">Définissez
+            les arcs orientés et leur capacité maximale c(u) &gt; 0.</p>
+          <div id="arcs-list"><p
+              style="color:var(--muted);font-size:12px;margin-bottom:11px">Aucun
+              arc. Cliquez ci-dessous pour en ajouter.</p></div>
+          <button class="btn-add-arc" onclick="addArc()"><i
+              class="bi bi-plus-lg"></i> Ajouter un arc</button>
+        </div>
+        <div style="display:flex;gap:9px;flex-wrap:wrap">
+          <button class="btn btn-green" onclick="submitNetwork()"><i
+              class="bi bi-check-lg"></i> Créer et analyser ce réseau</button>
+          <button class="btn btn-ghost" onclick="showPage('home')"><i
+              class="bi bi-x"></i> Annuler</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ SAISIE — SPLIT: left panel + right graph ══ -->
+    <div class="saisie-page" id="page-saisie">
+
+      <!-- LEFT: controls -->
+      <div class="saisie-left">
+        <!-- KPIs -->
+        <div class="kpi-row">
+          <div class="kpi"><div class="kpi-val" id="kpi-f">0</div><div
+              class="kpi-lbl">Flot total</div></div>
+          <div class="kpi"><div class="kpi-val" id="kpi-s">0</div><div
+              class="kpi-lbl">Saturés</div></div>
+          <div class="kpi"><div class="kpi-val" id="kpi-t">0</div><div
+              class="kpi-lbl">Arcs</div></div>
+        </div>
+
+        <!-- Delta Box -->
+        <div class="delta-box" id="delta-box">
+          <div class="delta-top">
+            <div class="delta-title"><i class="bi bi-lightning-fill"></i> Delta
+              (&#916;)</div>
+            <div class="delta-val" id="delta-val">—</div>
+          </div>
+          <div class="delta-path" id="delta-path"></div>
+        </div>
+
+        <!-- Markings Panel -->
+        <div class="mk-panel">
+          <div class="mk-panel-title"><i class="bi bi-tags"></i> Marquages
+            actifs</div>
+          <div class="mk-grid" id="mk-grid"><span class="mk-empty">Aucun
+              marquage</span></div>
+        </div>
+
+        <!-- Path picker -->
+        <div class="path-card">
+          <div class="path-title"><i class="bi bi-signpost-split"
+              style="color:var(--muted)"></i>Chemin Source → Puits</div>
+          <div class="path-disp" id="path-disp">
+            <span
+              style="color:var(--muted);font-style:italic;font-size:11.5px">Sélectionnez
+              les sommets ci-dessous</span>
+          </div>
+          <div
+            style="font-size:11px;color:var(--muted);margin-bottom:4px">Cliquez
+            pour ajouter / retirer :</div>
+          <div class="node-sel" id="node-sel"></div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:4px">
+            <button class="btn btn-sm btn-ghost" onclick="clearPath()"><i
+                class="bi bi-x-circle"></i> Effacer</button>
+            <button class="btn btn-sm btn-primary" onclick="runOnePath()"><i
+                class="bi bi-play-fill"></i> Simuler</button>
+            <button class="btn btn-sm btn-cyan" onclick="runFF()"><i
+                class="bi bi-fast-forward-fill"></i> Auto-optimal</button>
+          </div>
+        </div>
+
+        <!-- Arc table -->
+        <div class="arcs-card">
+          <div class="arcs-hdr"><i class="bi bi-table me-1"></i>État des
+            Arcs</div>
+          <div style="overflow-x:auto">
+            <table>
+              <thead><tr><th>Arc</th><th>Cap.</th><th>Flux
+                    φ</th><th>Dispo.</th><th>État</th></tr></thead>
+              <tbody id="arcs-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div style="display:flex;gap:7px;flex-wrap:wrap">
+          <button class="btn btn-red btn-sm" onclick="resetFlows()"><i
+              class="bi bi-arrow-counterclockwise"></i> Reset</button>
+          <button class="btn btn-sm" onclick="showPage('home')"><i
+              class="bi bi-grid"></i> Réseau</button>
+        </div>
+      </div>
+
+      <!-- RIGHT: live graph -->
+      <div class="saisie-right">
+        <div class="graph-panel-header">
+          <div class="graph-panel-title">
+            <i class="bi bi-diagram-3" style="color:var(--muted)"></i>
+            <span id="graph-net-name">Visualisation du Réseau</span>
+          </div>
+          <div class="graph-panel-actions">
+            <button class="btn btn-sm btn-ghost"
+              onclick="if(cyI)cyI.fit(undefined,30)" title="Recadrer"><i
+                class="bi bi-arrows-fullscreen"></i></button>
+            <button class="btn btn-sm btn-ghost" onclick="resetLayout()"
+              title="Relayout"><i class="bi bi-arrow-repeat"></i></button>
+          </div>
+        </div>
+        <div id="cy-inline"></div>
+        <div class="leg-bar">
+          <div class="leg-i"><div class="leg-line"
+              style="background:#93c5fd"></div>Arc normal</div>
+          <div class="leg-i"><div class="leg-line"
+              style="background:#ef4444"></div>Arc saturé</div>
+          <div class="leg-i"><div class="leg-line"
+              style="background:#fbbf24;height:2px;border-top:2px dashed #fbbf24"></div>Chemin
+            actif</div>
+          <div class="leg-i"><div class="leg-dot"
+              style="background:#dcfce7;border:2px solid #16a34a"></div>Marqué
+            +I</div>
+          <div class="leg-i"><div class="leg-dot"
+              style="background:#faf5ff;border:2px solid #9333ea"></div>Marqué
+            −L</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ RESULTS ══ -->
+    <div class="page" id="page-results">
+      <div class="res-wrap">
+        <div class="mfbox">
+          <div class="mfval" id="res-mf">—</div>
+          <div class="mflbl">Flot Maximal V(φ)*</div>
+          <div style="margin-top:7px;font-size:11.5px;color:#4338ca"
+            id="res-cut-info"></div>
+        </div>
+
+        <div class="res-grid">
+          <div>
+            <!-- Cut -->
+            <div class="rsect" id="res-cut-sect" style="display:none">
+              <div class="rtitle"><i class="bi bi-scissors"></i>Coupe
+                Minimale</div>
+              <div id="res-cut-body"></div>
+            </div>
+            <!-- Iterations -->
+            <div class="rsect">
+              <div class="rtitle"><i class="bi bi-list-ol"></i>Évolution du
+                Flot</div>
+              <div id="res-iters"></div>
+            </div>
+          </div>
+          <div>
+            <!-- Final arc table -->
+            <div class="rsect">
+              <div class="rtitle"><i class="bi bi-table"></i>Tableau
+                Récapitulatif</div>
+              <div style="overflow-x:auto">
+                <table>
+                  <thead><tr><th>De</th><th>Vers</th><th>c(u)</th><th>φ(u)</th><th>Dispo.</th><th>Statut</th></tr></thead>
+                  <tbody id="res-arcs"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div style="display:flex;gap:7px;flex-wrap:wrap;margin-top:4px">
+          <button class="btn btn-primary btn-sm" onclick="showPage('saisie')"><i
+              class="bi bi-arrow-left"></i> Retour analyse</button>
+          <button class="btn btn-red btn-sm" onclick="resetFlows()"><i
+              class="bi bi-arrow-counterclockwise"></i> Nouveau calcul</button>
+          <button class="btn btn-ghost btn-sm" onclick="showPage('home')"><i
+              class="bi bi-grid"></i> Changer réseau</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="sbar"><div class="sdot" id="sdot"></div><span
+        id="stxt">Prêt</span><span style="margin-left:auto;font-size:10.5px">M.
+        Gaye UCAO 2020-2021 p.23-25</span></div>
+    <div id="toast"></div>
+
+    <script>
+// ═══════════════════════════════ STATE ═══════════════════════════════
+var SRC='O', SNK='S', NET_NAME='';
+var NODES=[], caps={}, flows={};
+var userPath=[], iters=[];
+var cyI=null; // inline cytoscape on saisie page
+var nodePosMap={};
+var savedNets=[];
+var cNodes=[], cArcs=[];
+
+// ═══════════════════════════════ EXAMPLE ═══════════════════════════════
+var EX={
+  name:'Exemple M. Gaye UCAO',source:'O',sink:'S',
+  nodes:['O','A','B','C','D','E','F','G','S'],
+  caps:{'O-A':45,'O-B':25,'O-C':20,'A-D':10,'A-E':15,'A-G':20,'B-D':15,'B-E':5,'B-F':15,'C-F':10,'C-G':10,'D-S':30,'E-S':10,'F-S':20,'G-S':30},
+  pos:{O:{x:70,y:260},A:{x:210,y:130},B:{x:210,y:260},C:{x:210,y:400},D:{x:390,y:100},E:{x:390,y:210},F:{x:390,y:350},G:{x:390,y:460},S:{x:560,y:265}}
+};
+
+function loadExample(){
+  SRC=EX.source;SNK=EX.sink;NET_NAME=EX.name;
+  NODES=EX.nodes.slice();caps=Object.assign({},EX.caps);nodePosMap=Object.assign({},EX.pos);
+  initF();iters=[];userPath=[];
+  setSt('ok','Réseau M. Gaye UCAO chargé');
+  showPage('saisie');toast('Réseau M. Gaye UCAO chargé','ok');
+}
+
+// ═══════════════════════════════ ROUTING ═══════════════════════════════
+function showPage(p){
+  // Regular pages
+  ['home','create','results'].forEach(function(id){
+    document.getElementById('page-'+id).classList.toggle('active',id===p);
+  });
+  // Saisie is special (flex layout, not block)
+  var sp=document.getElementById('page-saisie');
+  if(p==='saisie'){sp.classList.add('active');}else{sp.classList.remove('active');}
+
+  document.getElementById('btn-back').style.display=(p!=='home')?'':'none';
+  document.getElementById('btn-run').style.display=(p==='saisie')?'':'none';
+  document.getElementById('btn-res').style.display=(p==='saisie'&&iters.length>0)?'':'none';
+  document.getElementById('btn-chg').style.display=(p==='saisie'||p==='results')?'':'none';
+
+  var T={home:'Ford-Fulkerson',create:'Nouveau Réseau',saisie:'Analyse',results:'Résultats'};
+  var S={home:'Algorithme de Flots Maximaux',create:'Définissez vos sommets et arcs',saisie:NET_NAME||'—',results:'Flot Maximal'};
+  document.getElementById('nav-title').textContent=T[p]||'Ford-Fulkerson';
+  document.getElementById('nav-sub').textContent=S[p]||'';
+
+  if(p==='home'){loadSaved();renderSavedList();}
+  if(p==='create'){initCreateForm();}
+  if(p==='saisie'){
+    renderArcsTable();updateKPI();renderNodeSel();renderPathDisp();
+    setTimeout(function(){initCyI();},80);
+    if(document.getElementById('graph-net-name'))
+      document.getElementById('graph-net-name').textContent=NET_NAME||'Réseau';
+  }
+  if(p==='results'){renderResults();}
+}
+
+// ═══════════════════════════════ CREATE ═══════════════════════════════
+function initCreateForm(){
+  cNodes=[];cArcs=[];
+  document.getElementById('net-name').value='';
+  document.getElementById('node-source').value='';
+  document.getElementById('node-sink').value='';
+  document.getElementById('node-input').value='';
+  renderNodeTags();renderArcList();
+}
+
+function addNode(){
+  var v=document.getElementById('node-input').value.trim().toUpperCase();
+  if(!v)return;
+  var s=document.getElementById('node-source').value.trim().toUpperCase();
+  var k=document.getElementById('node-sink').value.trim().toUpperCase();
+  if(cNodes.includes(v)||v===s||v===k){toast('Identifiant déjà utilisé','warn');return;}
+  cNodes.push(v);document.getElementById('node-input').value='';
+  renderNodeTags();renderArcList();
+}
+
+function removeNode(n){
+  cNodes=cNodes.filter(function(x){return x!==n;});
+  cArcs=cArcs.filter(function(a){return a.f!==n&&a.t!==n;});
+  renderNodeTags();renderArcList();
+}
+
+function renderNodeTags(){
+  var wrap=document.getElementById('nodes-wrap');
+  var ph=document.getElementById('nodes-ph');
+  Array.from(wrap.querySelectorAll('.ntag')).forEach(function(t){t.remove();});
+  ph.style.display=cNodes.length?'none':'';
+  cNodes.forEach(function(n){
+    var t=document.createElement('span');t.className='ntag';
+    t.innerHTML=n+' <span class="ntag-x" onclick="removeNode(\''+n+'\')" title="Retirer">✕</span>';
+    wrap.insertBefore(t,document.getElementById('node-input'));
+  });
+}
+
+function addArc(){cArcs.push({f:'',t:'',c:10});renderArcList();}
+function removeArc(i){cArcs.splice(i,1);renderArcList();}
+
+function renderArcList(){
+  var s=(document.getElementById('node-source').value||'').trim().toUpperCase();
+  var k=(document.getElementById('node-sink').value||'').trim().toUpperCase();
+  var all=(s?[s]:[]).concat(cNodes).concat(k?[k]:[]);
+  var opts=all.map(function(n){return '<option value="'+n+'">'+n+'</option>';}).join('');
+  var cnt=document.getElementById('arcs-list');cnt.innerHTML='';
+  if(!cArcs.length){cnt.innerHTML='<p style="color:var(--muted);font-size:12px;margin-bottom:11px">Aucun arc. Cliquez ci-dessous pour en ajouter.</p>';return;}
+  cArcs.forEach(function(a,i){
+    var d=document.createElement('div');d.className='arc-entry';
+    d.innerHTML=
+      '<div class="fg" style="min-width:80px;max-width:120px"><div class="flbl">De</div>'+
+      '<select id="af'+i+'" onchange="cArcs['+i+'].f=this.value"><option value="">—</option>'+opts+'</select></div>'+
+      '<div class="arc-arr">→</div>'+
+      '<div class="fg" style="min-width:80px;max-width:120px"><div class="flbl">Vers</div>'+
+      '<select id="at'+i+'" onchange="cArcs['+i+'].t=this.value"><option value="">—</option>'+opts+'</select></div>'+
+      '<div class="fg" style="min-width:75px;max-width:100px"><div class="flbl">Capacité</div>'+
+      '<input id="ac'+i+'" type="number" min="1" value="'+a.c+'" onchange="cArcs['+i+'].c=Math.max(1,parseInt(this.value)||1)"></div>'+
+      '<button class="arc-x" onclick="removeArc('+i+')" title="Supprimer"><i class="bi bi-trash3"></i></button>';
+    cnt.appendChild(d);
+    if(a.f)document.getElementById('af'+i).value=a.f;
+    if(a.t)document.getElementById('at'+i).value=a.t;
+  });
+}
+
+function readArcs(){
+  cArcs.forEach(function(a,i){
+    a.f=(document.getElementById('af'+i)||{value:a.f}).value;
+    a.t=(document.getElementById('at'+i)||{value:a.t}).value;
+    a.c=Math.max(1,parseInt((document.getElementById('ac'+i)||{value:a.c}).value)||1);
+  });
+}
+
+function submitNetwork(){
+  readArcs();
+  var name=document.getElementById('net-name').value.trim();
+  var s=document.getElementById('node-source').value.trim().toUpperCase();
+  var k=document.getElementById('node-sink').value.trim().toUpperCase();
+  if(!name){toast('Donnez un nom au réseau','warn');return;}
+  if(!s){toast('Définissez la source','warn');return;}
+  if(!k){toast('Définissez le puits','warn');return;}
+  if(s===k){toast('Source ≠ Puits requis','warn');return;}
+  if(!cArcs.length){toast('Ajoutez au moins un arc','warn');return;}
+  for(var i=0;i<cArcs.length;i++){
+    var a=cArcs[i];
+    if(!a.f||!a.t){toast('Arc '+(i+1)+' incomplet','warn');return;}
+    if(a.f===a.t){toast('Arc '+(i+1)+' : boucle interdite','warn');return;}
+    if(a.c<1){toast('Arc '+(i+1)+' : capacité ≥ 1','warn');return;}
+  }
+  SRC=s;SNK=k;NET_NAME=name;
+  var allN=[s].concat(cNodes).concat([k]);
+  NODES=allN.filter(function(n,i,a){return a.indexOf(n)===i;});
+  caps={};cArcs.forEach(function(a){caps[a.f+'-'+a.t]=a.c;});
+  autoLayout();initF();iters=[];userPath=[];
+  saveNet();
+  setSt('ok',name+' — '+NODES.length+' sommets, '+Object.keys(caps).length+' arcs');
+  showPage('saisie');toast('"'+name+'" créé','ok');
+}
+
+function autoLayout(){
+  nodePosMap={};
+  var layer={};layer[SRC]=0;var q=[SRC];
+  while(q.length){
+    var u=q.shift();
+    NODES.forEach(function(v){if(layer[v]===undefined&&caps[u+'-'+v]!==undefined){layer[v]=(layer[u]||0)+1;q.push(v);}});
+  }
+  NODES.forEach(function(n){if(layer[n]===undefined)layer[n]=0;});
+  var maxL=Math.max.apply(null,Object.values(layer));layer[SNK]=maxL;
+  var byL={};NODES.forEach(function(n){var l=layer[n];byL[l]=byL[l]||[];byL[l].push(n);});
+  var W=560,H=420,lc=maxL+1;
+  Object.keys(byL).forEach(function(l){
+    var ns=byL[l],ln=parseInt(l),x=60+ln*(W-80)/(Math.max(1,lc-1));
+    ns.forEach(function(n,i){var y=60+i*(H-80)/(Math.max(1,ns.length-1)||1);nodePosMap[n]={x:x,y:y};});
+  });
+}
+
+// ═══════════════════════════════ PERSIST ═══════════════════════════════
+function saveNet(){
+  try{
+    var d={name:NET_NAME,source:SRC,sink:SNK,nodes:NODES,caps:caps,pos:nodePosMap,date:new Date().toLocaleDateString('fr-FR')};
+    var s=JSON.parse(localStorage.getItem('ff_nets')||'[]');
+    s=s.filter(function(x){return x.name!==NET_NAME;});s.unshift(d);if(s.length>8)s=s.slice(0,8);
+    localStorage.setItem('ff_nets',JSON.stringify(s));savedNets=s;
+  }catch(e){}
+}
+function loadSaved(){try{savedNets=JSON.parse(localStorage.getItem('ff_nets')||'[]');}catch(e){savedNets=[];}}
+function renderSavedList(){
+  var el=document.getElementById('saved-list');
+  if(!savedNets.length){el.innerHTML='<div class="saved-empty">Aucun réseau sauvegardé.</div>';return;}
+  el.innerHTML=savedNets.map(function(s,i){
+    return '<div class="saved-item" onclick="restoreNet('+i+')">'+
+      '<div><div class="sv-name">'+s.name+'</div><div class="sv-meta">'+s.nodes.length+' sommets · '+Object.keys(s.caps||{}).length+' arcs · '+s.date+'</div></div>'+
+      '<i class="bi bi-arrow-right-circle" style="color:var(--muted);font-size:15px"></i></div>';
+  }).join('');
+}
+function restoreNet(i){
+  var s=savedNets[i];
+  SRC=s.source;SNK=s.sink;NODES=s.nodes.slice();caps=Object.assign({},s.caps);
+  nodePosMap=Object.assign({},s.pos||{});NET_NAME=s.name;
+  initF();iters=[];userPath=[];setSt('ok',s.name+' chargé');showPage('saisie');toast('"'+s.name+'" chargé','ok');
+}
+
+// ═══════════════════════════════ HELPERS ═══════════════════════════════
+function key(u,v){return u+'-'+v;}
+function gc(u,v){return caps[key(u,v)]||0;}
+function gf(u,v){return flows[key(u,v)]||0;}
+function sf(u,v,f){flows[key(u,v)]=f;}
+function ha(u,v){return key(u,v) in caps;}
+function sat(u,v){var c=gc(u,v);return c>0&&gf(u,v)>=c;}
+function initF(){flows={};Object.keys(caps).forEach(function(k){flows[k]=0;});}
+function totFlot(){return NODES.filter(function(n){return ha(SRC,n);}).reduce(function(s,n){return s+gf(SRC,n);},0);}
+
+// ═══════════════════════════════ ALGORITHM ═══════════════════════════════
+/**
+ * Marquage Ford-Fulkerson — M. Gaye UCAO p.24
+ *
+ * Règle 1 (FORWARD)  : sommet I marqué → marquer J successeur si arc I→J non saturé
+ *   étiquette : +I  |  amélioration : augmenter φ(I→J)
+ *
+ * Règle 2 (BACKWARD) : sommet L marqué → marquer K prédécesseur si arc K→L a flux > 0
+ *   étiquette : −L  |  amélioration : réduire φ(K→L)
+ *   Exemple du cours : B marqué −E signifie arc B→E a du flux,
+ *   on va réduire φ(B→E). De même O marqué −A : arc O→A a du flux.
+ *
+ * NB : mk[v].from = sommet via lequel v a été marqué
+ *      Pour un arc direct  (sign='+') u→v : u=path[i], v=path[i+1], arc physique = u→v
+ *      Pour un arc inversé (sign='−') K←L : K=path[i], L=path[i+1]=mk[K].from
+ *        mais l'arc PHYSIQUE est K→L — on le décrémente de delta
+ */
+function markRound(){
+  var mk={};
+  var displayMarks={};  // Tous les marquages pour l'affichage (y compris les doublons bloqués)
+
+  mk[SRC]={from:null,sign:'+',lbl:'+'+SRC};
+  displayMarks[SRC]={sign:'+',lbl:'+'+SRC};
+  var q=[SRC],it=0;
+
+  while(q.length&&it++<2000){
+    var cur=q.shift();
+
+    // Règle 1 : arc DIRECT cur→nx non saturé → marquer nx avec +cur
+    NODES.forEach(function(nx){
+      if(!ha(cur,nx)||sat(cur,nx))return;
+      if(mk[nx]===undefined){
+        // Marquage primaire : nœud pas encore marqué
+        mk[nx]={from:cur,sign:'+',lbl:'+'+cur};
+        displayMarks[nx]={sign:'+',lbl:'+'+cur};
+        q.push(nx);
+      } else {
+        // Marquage secondaire : nœud déjà marqué, on note quand même pour l'affichage
+        var dKey=nx+'__r1_'+cur;
+        if(!displayMarks[dKey]){
+          displayMarks[dKey]={sign:'+',lbl:'+'+cur,node:nx,secondary:true};
+        }
+      }
+    });
+
+    // Règle 2 : arc INVERSÉ pv→cur avec flux > 0 → marquer pv avec −cur
+    NODES.forEach(function(pv){
+      if(!ha(pv,cur)||gf(pv,cur)<=0)return;
+      if(mk[pv]===undefined){
+        // Marquage primaire
+        mk[pv]={from:cur,sign:'-',lbl:'-'+cur};
+        displayMarks[pv]={sign:'-',lbl:'-'+cur};
+        q.push(pv);
+      } else {
+        // Marquage secondaire : nœud déjà marqué (ex: source O déjà +O)
+        var dKey=pv+'__r2_'+cur;
+        if(!displayMarks[dKey]){
+          displayMarks[dKey]={sign:'-',lbl:'-'+cur,node:pv,secondary:true};
+        }
+      }
+    });
+  }
+
+  if(!mk[SNK])return{ok:false,path:[],delta:0,marks:mk,displayMarks:displayMarks};
+
+  // Reconstruction du chemin SRC→…→SNK via les pointeurs from
+  var path=[],c=SNK;
+  while(c!==null&&c!==undefined){
+    path.unshift(c);
+    var m=mk[c];
+    c=(m&&m.from!==null&&m.from!==undefined)?m.from:null;
+  }
+
+  var delta=Infinity;
+  for(var i=0;i<path.length-1;i++){
+    var u=path[i],v=path[i+1];
+    var mU=mk[u];
+    if(mU&&mU.sign==='-'&&mU.from===v){
+      delta=Math.min(delta,gf(u,v));
+    } else {
+      delta=Math.min(delta,gc(u,v)-gf(u,v));
+    }
+  }
+  if(!isFinite(delta)||delta<=0)delta=0;
+  return{ok:true,path:path,delta:delta,marks:mk,displayMarks:displayMarks};
+}
+
+function applyImprove(path,delta,marks){
+  for(var i=0;i<path.length-1;i++){
+    var u=path[i],v=path[i+1];
+    var mU=marks[u];
+    if(mU&&mU.sign==='-'&&mU.from===v){
+      // CAS B : arc inversé — réduire φ(u→v)
+      sf(u,v,gf(u,v)-delta);
+    } else {
+      // CAS A : arc direct — augmenter φ(u→v)
+      sf(u,v,gf(u,v)+delta);
+    }
+  }
+}
+
+function bfsInit(){
+  function bfsP(){
+    var vis={},prev={},q2=[SRC];vis[SRC]=true;
+    while(q2.length){var u=q2.shift();if(u===SNK){var p=[],c2=SNK;while(c2){p.unshift(c2);c2=prev[c2];}return p;}
+    NODES.forEach(function(v){if(!vis[v]&&ha(u,v)&&!sat(u,v)){vis[v]=true;prev[v]=u;q2.push(v);}});}return null;
+  }
+  var mx=200;while (mx-- > 0){var p=bfsP();if(!p)break;var d=Math.min.apply(null,p.slice(0,-1).map(function(_,i){return gc(p[i],p[i+1])-gf(p[i],p[i+1]);}));if(d<=0)break;p.slice(0,-1).forEach(function(_,i){sf(p[i],p[i+1],gf(p[i],p[i+1])+d);});}
+}
+
+function runFF(){
+  iters=[];
+  if(totFlot()===0){bfsInit();iters.push({type:'initial',label:'Flot initial (BFS)',desc:'V(φ)='+totFlot(),flot:totFlot()});}
+  setSt('run','Marquage en cours…');
+  clearCyHighlights();
+  clearDeltaAndMarkings();
+  var mx=50;
+  var finalMarks={}, finalDisplayMarks={}, finalPath=[], finalDelta=0;
+  while (mx-- > 0){
+    var r=markRound();
+    if(!r.ok){
+      var mn=Object.keys(r.marks);
+      var ca=Object.keys(caps).filter(function(arc){var p=arc.split('-');return mn.includes(p[0])&&!mn.includes(p[1]);});
+      var cc=ca.reduce(function(s,arc){return s+caps[arc];},0);
+      iters.push({type:'maximal',label:'Flot MAXIMAL atteint',desc:'S non marquable → V(φ)*='+totFlot(),flot:totFlot(),mn:mn,ca:ca,cc:cc});
+      setSt('max','Flot maximal = '+totFlot());
+      finalMarks=r.marks; finalDisplayMarks=r.displayMarks;
+      finalPath=[]; finalDelta=0;
+      break;
+    }
+    // Sauvegarder les marquages AVANT d'appliquer l'amélioration
+    finalMarks=r.marks; finalDisplayMarks=r.displayMarks;
+    finalPath=r.path; finalDelta=r.delta;
+    var fb=totFlot();
+    iters.push({type:'iter',label:'Chemin : '+r.path.join(' → '),desc:'Δ='+r.delta+' | avant='+fb,path:r.path,delta:r.delta,flot:fb,marks:r.marks,displayMarks:r.displayMarks});
+    applyImprove(r.path,r.delta,r.marks);
+    iters[iters.length-1].fa=totFlot();
+  }
+  // updateCyI EN PREMIER pour mettre à jour les arcs saturés (rouge)
+  // PUIS highlightMarked pour apposer les marquages — dans cet ordre strict
+  updateKPI();renderArcsTable();
+  updateCyI();
+  highlightMarked(finalMarks, finalDisplayMarks);
+  renderMarkingsPanel(finalMarks, finalDisplayMarks);
+  if(finalPath.length) renderDeltaBox(finalPath, finalDelta, finalMarks);
+  else renderDeltaBox(null,0,{});
+  document.getElementById('btn-res').style.display='';
+  toast('V(φ)*='+totFlot(),'ok');
+}
+
+function runOnePath(){
+  if(!userPath.length){toast('Sélectionnez des sommets intermédiaires','warn');return;}
+  var path=[SRC].concat(userPath).concat([SNK]);
+  for(var i=0;i<path.length-1;i++){if(!ha(path[i],path[i+1])){toast('Arc '+path[i]+'→'+path[i+1]+' inexistant !','err');return;}}
+
+  // Calculer le marquage AVANT d'appliquer (état courant du flot)
+  var r=markRound();
+  if(!r.ok){toast('Flot déjà maximal','warn');return;}
+
+  var delta=Math.min.apply(null,path.slice(0,-1).map(function(_,i){return gc(path[i],path[i+1])-gf(path[i],path[i+1]);}));
+  if(delta<=0){toast('Chemin saturé','warn');return;}
+
+  var fb=totFlot();
+  path.slice(0,-1).forEach(function(_,i){sf(path[i],path[i+1],gf(path[i],path[i+1])+delta);});
+  iters.push({type:'iter',label:'Manuel : '+path.join(' → '),desc:'Δ='+delta,path:path,delta:delta,flot:fb,fa:totFlot(),marks:r.marks,displayMarks:r.displayMarks});
+
+  updateKPI();renderArcsTable();
+  updateCyI();
+  highlightPath(path);
+
+  // Afficher les marquages qui étaient actifs pour cette itération
+  renderDeltaBox(path, delta, r.marks);
+  renderMarkingsPanel(r.marks, r.displayMarks);
+
+  // Vérifier si flot maximal après amélioration
+  var chk=markRound();
+  if(!chk.ok){setSt('max','Flot maximal = '+totFlot());toast('Flot maximal atteint !','ok');}
+  else{setSt('run','V(φ)='+totFlot()+' — pas encore optimal');toast('Δ='+delta+' | V(φ)='+totFlot(),'ok');}
+  document.getElementById('btn-res').style.display='';
+}
+
+// ═══════════════════════════════ RENDER ═══════════════════════════════
+function renderArcsTable(){
+  var tb=document.getElementById('arcs-tbody');tb.innerHTML='';
+  Object.keys(caps).forEach(function(arc){
+    var p=arc.split('-'),u=p[0],v=p[1],f=gf(u,v),c=gc(u,v),av=c-f,s=sat(u,v);
+    var tr=document.createElement('tr');
+    tr.innerHTML='<td style="font-weight:600;white-space:nowrap">'+u+'→'+v+'</td><td>'+c+'</td>'+
+      '<td style="font-weight:600;color:'+(s?'var(--red)':'inherit')+'">'+f+'</td>'+
+      '<td style="color:'+(av===0?'var(--red)':'var(--muted)')+'">'+av+'</td>'+
+      '<td><span class="bdg '+(s?'bdg-s':'bdg-n')+'">'+(s?'Sat.':'OK')+'</span></td>';
+    tb.appendChild(tr);
+  });
+}
+
+function renderNodeSel(){
+  var el=document.getElementById('node-sel');
+  var inter=NODES.filter(function(n){return n!==SRC&&n!==SNK;});
+  el.innerHTML='<div class="nb fx-src" title="Source">'+SRC+'</div>'+
+    inter.map(function(n){return '<button class="nb '+(userPath.includes(n)?'sel':'')+'" onclick="togglePN(\''+n+'\')">'+n+'</button>';}).join('')+
+    '<div class="nb fx-snk" title="Puits">'+SNK+'</div>';
+}
+
+function togglePN(n){
+  if(userPath.includes(n))userPath=userPath.filter(function(x){return x!==n;});else userPath.push(n);
+  renderPathDisp();renderNodeSel();
+  // highlight selected path on graph
+  if(userPath.length) highlightPath([SRC].concat(userPath).concat([SNK]));
+  else clearCyHighlights();
+}
+
+function renderPathDisp(){
+  var el=document.getElementById('path-disp');
+  if(!userPath.length){el.innerHTML='<span style="color:var(--muted);font-style:italic;font-size:11.5px">Sélectionnez les sommets ci-dessous</span>';return;}
+  var full=[SRC].concat(userPath).concat([SNK]);
+  el.innerHTML=full.map(function(n,i){
+    var cls='pb '+(n===SRC?'src':n===SNK?'snk':'inter');
+    return '<span class="'+cls+'">'+n+'</span>'+(i<full.length-1?'<span class="pa">→</span>':'');
+  }).join('');
+}
+
+function clearPath(){userPath=[];renderPathDisp();renderNodeSel();clearCyHighlights();}
+
+function updateKPI(){
+  document.getElementById('kpi-f').textContent=totFlot();
+  document.getElementById('kpi-s').textContent=Object.keys(caps).filter(function(k){var p=k.split('-');return sat(p[0],p[1]);}).length;
+  document.getElementById('kpi-t').textContent=Object.keys(caps).length;
+}
+
+function resetFlows(){
+  initF();iters=[];userPath=[];
+  updateKPI();renderArcsTable();renderPathDisp();renderNodeSel();
+  clearCyHighlights();updateCyI();
+  clearDeltaAndMarkings();
+  setSt('idle','Flux remis à zéro');
+  document.getElementById('btn-res').style.display='none';
+  showPage('saisie');toast('Flux réinitialisé','ok');
+}
+
+function renderResults(){
+  var mi=iters.find(function(it){return it.type==='maximal';});
+  document.getElementById('res-mf').textContent=totFlot();
+  if(mi&&mi.ca&&mi.ca.length){
+    document.getElementById('res-cut-sect').style.display='';
+    document.getElementById('res-cut-info').textContent='Capacité coupe min. = '+mi.cc+' (= V(φ)* ✓)';
+    document.getElementById('res-cut-body').innerHTML=
+      '<p style="font-size:12px;color:var(--muted);margin-bottom:9px">Arcs de la coupe :</p>'+
+      mi.ca.map(function(arc){var p=arc.split('-');return '<span class="cut-badge">'+p[0]+'→'+p[1]+' (c='+caps[arc]+')</span>';}).join('')+
+      '<p style="font-size:11px;color:var(--muted);margin-top:9px">Marqués : '+mi.mn.join(', ')+'</p>';
+  }
+  var iEl=document.getElementById('res-iters');
+  iEl.innerHTML=iters.length===0?'<p style="color:var(--muted);font-size:12px">Aucune itération.</p>':
+    iters.map(function(it){
+      var ic=it.type==='maximal'?'✓':it.type==='initial'?'◎':'→';
+      var col=it.type==='maximal'?'var(--green)':it.type==='initial'?'var(--blue)':'var(--amber)';
+      var af=it.fa!==undefined?' → '+it.fa:'';
+      return '<div class="iter-row"><div class="iter-lbl" style="color:'+col+'">'+ic+' '+it.label+'</div><div class="iter-desc">'+it.desc+(it.type==='iter'?af:'')+'</div></div>';
+    }).join('');
+  var tb=document.getElementById('res-arcs');tb.innerHTML='';
+  Object.keys(caps).forEach(function(arc){
+    var p=arc.split('-'),u=p[0],v=p[1],f=gf(u,v),c=gc(u,v),av=c-f,s=sat(u,v);
+    var tr=document.createElement('tr');
+    tr.innerHTML='<td style="font-weight:600">'+u+'</td><td style="font-weight:600">'+v+'</td><td>'+c+'</td>'+
+      '<td style="font-weight:'+(s?700:400)+';color:'+(s?'var(--red)':'inherit')+'">'+f+'</td><td>'+av+'</td>'+
+      '<td><span class="bdg '+(s?'bdg-s':'bdg-n')+'">'+(s?'Saturé':'OK')+'</span></td>';
+    tb.appendChild(tr);
+  });
+}
+
+// ═══════════════════════════════ CYTOSCAPE INLINE ═══════════════════════════════
+function cyStyleDef(){
+  return [
+    // ── Nœud de base : ID centré dans le cercle ──
+    {selector:'node',style:{
+      'background-color':'#fff','border-width':2,'border-color':'#d1d5db',
+      'label':'data(id)',
+      'color':'#374151','font-size':'13px','font-weight':'700',
+      'text-valign':'center','text-halign':'center',
+      'width':'48px','height':'48px'
+    }},
+    // ── Nœud marqué : on compose "marquage\nID" pour montrer les deux
+    {selector:'node[mark]',style:{
+      'label':'data(fullLabel)',   // fullLabel = "marquage\nID"
+      'font-size':'11px','font-weight':'700',
+      'text-valign':'center',
+      'text-halign':'center',
+      'text-wrap':'wrap',
+      'text-max-width':'80px',
+      'text-background-color':'transparent',
+      'text-background-opacity':0,
+      'text-border-width':0
+    }},
+    // Source & puits
+    {selector:'node[id="'+SRC+'"]',style:{'background-color':'#ede9fe','border-color':'#7c3aed','color':'#5b21b6','border-width':3}},
+    {selector:'node[id="'+SNK+'"]',style:{'background-color':'#ede9fe','border-color':'#7c3aed','color':'#5b21b6','border-width':3}},
+    // ── Arcs ──
+    {selector:'edge',style:{
+      'width':2,'line-color':'#93c5fd','target-arrow-color':'#93c5fd',
+      'target-arrow-shape':'triangle','curve-style':'bezier',
+      'label':'data(label)','font-size':'9.5px','color':'#6b7280',
+      'text-background-color':'#fff','text-background-opacity':1,
+      'text-background-padding':'2px','text-rotation':'autorotate'
+    }},
+    // Arc saturé → ROUGE immédiat
+    {selector:'edge.sat',style:{
+      'line-color':'#ef4444','target-arrow-color':'#ef4444',
+      'width':3.5,'color':'#dc2626',
+      'font-weight':'700'
+    }},
+    // Arc sur chemin sélectionné → jaune pointillé
+    {selector:'edge.path-hl',style:{
+      'line-color':'#fbbf24','target-arrow-color':'#fbbf24',
+      'width':3,'line-style':'dashed','color':'#d97706'
+    }},
+    // Nœud marqué + (vert)
+    {selector:'node.mk-p',style:{
+      'background-color':'#dcfce7','border-color':'#16a34a','border-width':3,
+      'color':'#15803d'
+    }},
+    // Nœud marqué - (violet)
+    {selector:'node.mk-n',style:{
+      'background-color':'#faf5ff','border-color':'#9333ea','border-width':3,
+      'color':'#7e22ce'
+    }},
+    // Nœud sur le chemin actif (orange border)
+    {selector:'node.on-path',style:{'border-color':'#fbbf24','border-width':3}},
+    {selector:'node:selected',style:{'border-color':'#f59e0b','border-width':4}}
+  ];
+}
+
+function initCyI(){
+  if(cyI){try{cyI.destroy();}catch(e){} cyI=null;}
+  var container=document.getElementById('cy-inline');
+  if(!container||!NODES.length)return;
+  var els=[];
+  NODES.forEach(function(id){
+    var pos=nodePosMap[id]||{x:Math.random()*500+60,y:Math.random()*380+60};
+    // 'id' field is used as default label (data(id) in style)
+    // 'mark' is undefined initially → no top label shown
+    els.push({group:'nodes',data:{id:id},position:pos});
+  });
+  Object.keys(caps).forEach(function(arc){
+    var p=arc.split('-'),u=p[0],v=p[1],f=flows[arc]||0,c=caps[arc];
+    var isSaturated=sat(u,v);
+    els.push({group:'edges',data:{id:arc,source:u,target:v,cap:c,flow:f,label:f+'/'+c},classes:isSaturated?'sat':''});
+  });
+  cyI=window.cytoscape({
+    container:container,elements:els,layout:{name:'preset'},
+    style:cyStyleDef(),minZoom:.2,maxZoom:4,wheelSensitivity:.15
+  });
+  cyI.fit(undefined,36);
+}
+
+function updateCyI(){
+  if(!cyI)return;
+  cyI.edges().forEach(function(e){
+    var arc=e.id(),p=arc.split('-'),u=p[0],v=p[1],f=flows[arc]||0,c=caps[arc];
+    e.data('label',f+'/'+c);
+    // Saturation → rouge IMMÉDIAT
+    if(sat(u,v)){
+      e.addClass('sat');
+    } else {
+      e.removeClass('sat');
+    }
+  });
+}
+
+function clearCyHighlights(){
+  if(!cyI)return;
+  cyI.edges().removeClass('path-hl');
+  cyI.nodes().removeClass('mk-p mk-n on-path');
+  cyI.nodes().forEach(function(n){
+    n.removeData('mark');
+    n.removeData('fullLabel');
+  });
+}
+
+function highlightPath(path){
+  if(!cyI)return;
+  clearCyHighlights();
+  for(var i=0;i<path.length-1;i++){
+    var arc=path[i]+'-'+path[i+1];
+    var e=cyI.getElementById(arc);
+    if(e.length)e.addClass('path-hl');
+  }
+  path.forEach(function(n){
+    var node=cyI.getElementById(n);
+    if(node.length)node.addClass('on-path');
+  });
+}
+
+function highlightMarked(marks, displayMarks){
+  if(!cyI)return;
+  clearCyHighlights();
+  var dm=displayMarks||marks;
+
+  // Construire par nœud la liste complète des labels (primaire + secondaires)
+  // identique à renderMarkingsPanel pour cohérence graphe ↔ panel
+  var byNode={};
+  Object.keys(dm).forEach(function(key){
+    var m=dm[key];
+    var nodeId=m.node!==undefined?m.node:key;
+    if(NODES.indexOf(nodeId)===-1)return;
+    if(!byNode[nodeId])byNode[nodeId]=[];
+    var alreadyHas=byNode[nodeId].some(function(x){return x.lbl===m.lbl;});
+    if(!alreadyHas)byNode[nodeId].push(m);
+  });
+
+  Object.keys(byNode).forEach(function(nodeId){
+    var mlist=byNode[nodeId];
+    var node=cyI.getElementById(nodeId);
+    if(!node.length)return;
+
+    // Trier : primaire en premier
+    mlist.sort(function(a,b){return (a.secondary?1:0)-(b.secondary?1:0);});
+
+    // Couleur du nœud = signe du marquage PRIMAIRE
+    var primarySign=mlist[0].sign;
+    node.addClass(primarySign==='+'?'mk-p':'mk-n');
+
+    // Label au-dessus = tous les labels séparés par espace
+    var allLabels=mlist.map(function(m){return m.lbl;}).join(' ');
+    node.data('mark', allLabels);
+    node.data('fullLabel', allLabels+'\n'+nodeId);
+  });
+}
+
+function resetLayout(){
+  if(!cyI)return;
+  cyI.layout({name:'breadthfirst',directed:true,spacingFactor:1.4,padding:30,animate:true,animationDuration:400}).run();
+  setTimeout(function(){cyI.fit(undefined,30);},500);
+}
+
+// ═══════════════════════════════ DELTA BOX & MARKINGS PANEL ═══════════════════════════════
+function renderDeltaBox(path, delta, marks){
+  var box=document.getElementById('delta-box');
+  var valEl=document.getElementById('delta-val');
+  var pathEl=document.getElementById('delta-path');
+  if(!path||!path.length){box.classList.remove('show');return;}
+  box.classList.add('show');
+  valEl.textContent=delta;
+  // Build path with node badges
+  var html='';
+  path.forEach(function(n,i){
+    var cls='dp-node '+(n===SRC?'dp-src':n===SNK?'dp-snk':(marks[n]&&marks[n].sign==='-'?'dp-inv':'dp-int'));
+    html+='<span class="'+cls+'">'+n+'</span>';
+    if(i<path.length-1)html+='<span class="dp-arr">→</span>';
+  });
+  pathEl.innerHTML=html;
+}
+
+function renderMarkingsPanel(marks, displayMarks){
+  var el=document.getElementById('mk-grid');
+  var dm=displayMarks||marks;
+  if(!dm||!Object.keys(dm).length){el.innerHTML='<span class="mk-empty">Aucun marquage</span>';return;}
+
+  // Grouper TOUS les marquages (primaires + secondaires) par nodeId
+  // Primaires   : clé = nodeId,           m.node = undefined → nodeId = key
+  // Secondaires : clé = nodeId__rx_from,  m.node = nodeId
+  var byNode={};
+  Object.keys(dm).forEach(function(key){
+    var m=dm[key];
+    var nodeId=m.node!==undefined?m.node:key;  // secondaire → m.node, primaire → key
+    // Ignorer les clés composites qui ne sont pas dans NODES (ex: clés internes)
+    // On accepte uniquement si nodeId est un vrai nœud du réseau
+    if(NODES.indexOf(nodeId)===-1)return;
+    if(!byNode[nodeId])byNode[nodeId]=[];
+    // Éviter les doublons (même lbl déjà présent)
+    var alreadyHas=byNode[nodeId].some(function(x){return x.lbl===m.lbl;});
+    if(!alreadyHas)byNode[nodeId].push(m);
+  });
+
+  // Ordre d'affichage : ordre naturel dans NODES (O, A, B, C, D, E, F, G, S…)
+  var orderedNodes=NODES.filter(function(n){return byNode[n]&&byNode[n].length>0;});
+
+  if(!orderedNodes.length){el.innerHTML='<span class="mk-empty">Aucun marquage</span>';return;}
+
+  var rows='';
+  orderedNodes.forEach(function(nodeId){
+    var mlist=byNode[nodeId];
+    // Trier : primaire d'abord (non secondary), puis secondaires
+    mlist.sort(function(a,b){return (a.secondary?1:0)-(b.secondary?1:0);});
+    var labels=mlist.map(function(m){
+      var cls='mk-tag '+(m.sign==='+'?'plus':'minus');
+      return '<span class="'+cls+'">'+m.lbl+'</span>';
+    }).join(' ');
+    rows+='<div class="mk-row">'+
+      '<span class="mk-node">'+nodeId+'</span>'+
+      '<span class="mk-arrow">:</span>'+
+      '<span class="mk-labels">'+labels+'</span>'+
+    '</div>';
+  });
+  el.innerHTML=rows;
+}
+
+function clearDeltaAndMarkings(){
+  document.getElementById('delta-box').classList.remove('show');
+  document.getElementById('mk-grid').innerHTML='<span class="mk-empty">Aucun marquage</span>';
+}
+
+// ═══════════════════════════════ STATUS / TOAST ═══════════════════════════════
+function setSt(s,t){
+  var d=document.getElementById('sdot');
+  d.className='sdot '+(s==='run'?'run':s==='max'?'max':s==='ok'?'ok':'');
+  document.getElementById('stxt').textContent=t;
+}
+function toast(msg,type){
+  type=type||'ok';var el=document.getElementById('toast');
+  var c={ok:'var(--green)',warn:'var(--amber)',err:'var(--red)'}[type]||'var(--green)';
+  var ic={ok:'check-circle',warn:'exclamation-triangle',err:'x-circle'}[type]||'info-circle';
+  el.innerHTML='<i class="bi bi-'+ic+'" style="color:'+c+'"></i>'+msg;
+  el.classList.add('show');clearTimeout(el._t);el._t=setTimeout(function(){el.classList.remove('show');},2800);
+}
+
+// ═══════════════════════════════ INIT ═══════════════════════════════
+loadSaved();renderSavedList();
+setSt('idle','Sélectionnez un réseau pour commencer');
+</script>
+  </body>
+</html>

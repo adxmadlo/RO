@@ -1,0 +1,864 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1.0">
+    <title>Bellman-Ford — Plus Court / Long Chemin</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+      rel="stylesheet">
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"
+      rel="stylesheet">
+    <script
+      src="https://cdn.jsdelivr.net/npm/cytoscape@3.28.1/dist/cytoscape.min.js"></script>
+    <style>
+    :root {
+      --bg: #f8fafc;
+      --w: #fff;
+      --b: #e5e7eb;
+      --b2: #cbd5e1;
+      --t: #111827;
+      --mu: #64748b;
+      --mu2: #94a3b8;
+      --bl: #3b82f6;
+      --bl2: #2563eb;
+      --gn: #22c55e;
+      --gn2: #16a34a;
+      --or: #f97316;
+      --or2: #ea580c;
+      --pu: #8b5cf6;
+      --pu2: #6d28d9;
+      --rd: #ef4444;
+      --am: #f59e0b;
+      --shadow: 0 18px 45px rgba(15, 23, 42, .08);
+      --r: 14px;
+      --font: Inter, Segoe UI, system-ui, -apple-system, sans-serif
+    }
+
+    * {
+      box-sizing: border-box
+    }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--t);
+      font-family: var(--font);
+      font-size: 14px
+    }
+
+    .app-nav {
+      height: 58px;
+      background: var(--w);
+      border-bottom: 1px solid var(--b);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 0 18px;
+      position: sticky;
+      top: 0;
+      z-index: 20
+    }
+
+    .nav-ib {
+      width: 34px;
+      height: 34px;
+      border-radius: 10px;
+      border: 1px solid var(--b);
+      background: var(--bg);
+      display: grid;
+      place-items: center;
+      color: var(--mu);
+      text-decoration: none;
+      cursor: pointer
+    }
+
+    .nav-title {
+      font-weight: 850;
+      font-size: 15px
+    }
+
+    .nav-sub {
+      font-size: 11.5px;
+      color: var(--mu)
+    }
+
+    .nav-right {
+      margin-left: auto;
+      display: flex;
+      gap: 8px;
+      align-items: center
+    }
+
+    .page {
+      display: none
+    }
+
+    .page.active {
+      display: block
+    }
+
+    .wrap {
+      max-width: 960px;
+      margin: auto;
+      padding: 34px 18px 78px
+    }
+
+    .hero-title {
+      font-size: 28px;
+      font-weight: 900;
+      letter-spacing: -.04em
+    }
+
+    .muted {
+      color: var(--mu)
+    }
+
+    .cards {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 18px;
+      margin-top: 26px
+    }
+
+    .choice {
+      background: var(--w);
+      border: 1px solid var(--b);
+      border-radius: 18px;
+      padding: 28px 24px;
+      text-align: center;
+      cursor: pointer;
+      transition: .18s;
+      box-shadow: 0 1px 0 rgba(255, 255, 255, .8) inset
+    }
+
+    .choice:hover {
+      transform: translateY(-3px);
+      box-shadow: var(--shadow);
+      border-color: var(--gn)
+    }
+
+    .choice .ic {
+      width: 64px;
+      height: 64px;
+      border-radius: 18px;
+      margin: 0 auto 16px;
+      display: grid;
+      place-items: center;
+      color: #fff;
+      font-size: 27px
+    }
+
+    .ic.ex {
+      background: linear-gradient(135deg, var(--gn), var(--gn2))
+    }
+
+    .ic.cu {
+      background: linear-gradient(135deg, var(--pu), var(--pu2))
+    }
+
+    .saved {
+      margin-top: 28px
+    }
+
+    .saved-item {
+      background: var(--w);
+      border: 1px solid var(--b);
+      border-radius: 12px;
+      padding: 12px 15px;
+      margin-bottom: 8px;
+      display: flex;
+      justify-content: space-between;
+      cursor: pointer
+    }
+
+    .saved-item:hover {
+      border-color: var(--gn);
+      background: #f0fdf4
+    }
+
+    .form-card,
+    .panel {
+      background: var(--w);
+      border: 1px solid var(--b);
+      border-radius: var(--r);
+      padding: 20px;
+      margin-bottom: 16px
+    }
+
+    .form-title {
+      font-weight: 800;
+      margin-bottom: 14px;
+      display: flex;
+      gap: 8px
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px
+    }
+
+    .grid3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px
+    }
+
+    .fg {
+      display: flex;
+      flex-direction: column;
+      gap: 6px
+    }
+
+    .fl {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: .4px;
+      font-weight: 800;
+      color: var(--mu)
+    }
+
+    .fl span {
+      color: var(--rd)
+    }
+
+    input,
+    select {
+      width: 100%;
+      border: 1px solid var(--b2);
+      border-radius: 10px;
+      padding: 10px 11px;
+      background: var(--w);
+      color: var(--t);
+      outline: none
+    }
+
+    input:focus,
+    select:focus {
+      border-color: var(--gn);
+      box-shadow: 0 0 0 3px rgba(34, 197, 94, .13)
+    }
+
+    .tag-wrap {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      min-height: 44px;
+      border: 1px solid var(--b2);
+      border-radius: 10px;
+      padding: 8px
+    }
+
+    .tag {
+      background: #dcfce7;
+      color: #15803d;
+      border: 1px solid #bbf7d0;
+      border-radius: 999px;
+      padding: 4px 10px;
+      font-weight: 800;
+      font-size: 12px
+    }
+
+    .arc-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr 120px auto;
+      gap: 8px;
+      align-items: end;
+      background: var(--bg);
+      border: 1px solid var(--b);
+      border-radius: 12px;
+      padding: 10px;
+      margin-bottom: 8px
+    }
+
+    .work {
+      display: none;
+      height: calc(100vh - 58px - 38px)
+    }
+
+    .work.active {
+      display: flex
+    }
+
+    .left {
+      width: 430px;
+      background: var(--w);
+      border-right: 1px solid var(--b);
+      padding: 18px;
+      overflow: auto
+    }
+
+    .right {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-width: 0
+    }
+
+    .kpis {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-bottom: 14px
+    }
+
+    .kpi {
+      background: var(--bg);
+      border: 1px solid var(--b);
+      border-radius: 13px;
+      padding: 12px;
+      text-align: center
+    }
+
+    .kpi .v {
+      font-size: 22px;
+      font-weight: 900
+    }
+
+    .kpi .l {
+      font-size: 10px;
+      color: var(--mu);
+      text-transform: uppercase
+    }
+
+    .mode {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      margin-bottom: 14px
+    }
+
+    .pill {
+      border: 1px solid var(--b2);
+      border-radius: 999px;
+      background: var(--w);
+      padding: 8px 15px;
+      font-weight: 850;
+      cursor: pointer;
+      color: var(--mu)
+    }
+
+    .pill.on.min {
+      background: var(--gn);
+      border-color: var(--gn);
+      color: #fff
+    }
+
+    .pill.on.max {
+      background: var(--or);
+      border-color: var(--or);
+      color: #fff
+    }
+
+    .path-nodes {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      align-items: center
+    }
+
+    .node-b {
+      background: var(--or);
+      color: #fff;
+      border-radius: 9px;
+      padding: 7px 12px;
+      font-weight: 900
+    }
+
+    .node-b.min {
+      background: var(--gn);
+      border-bottom: 3px solid var(--gn2)
+    }
+
+    .node-b.max {
+      background: var(--or);
+      border-bottom: 3px solid var(--or2)
+    }
+
+    .arr {
+      color: var(--mu2)
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse
+    }
+
+    th,
+    td {
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--b);
+      font-size: 12.5px
+    }
+
+    th {
+      color: var(--mu);
+      text-transform: uppercase;
+      font-size: 10.5px;
+      background: var(--bg);
+      text-align: left
+    }
+
+    .opt-row td {
+      background: #fff7ed
+    }
+
+    .gh {
+      height: 48px;
+      background: var(--w);
+      border-bottom: 1px solid var(--b);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 14px
+    }
+
+    .gh-a {
+      display: flex;
+      gap: 7px
+    }
+
+    #cy-main {
+      flex: 1;
+      background: var(--w);
+      min-height: 420px
+    }
+
+    .legend {
+      background: var(--w);
+      border-top: 1px solid var(--b);
+      display: flex;
+      gap: 14px;
+      flex-wrap: wrap;
+      padding: 10px 14px
+    }
+
+    .li {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+      color: var(--mu);
+      font-size: 11px
+    }
+
+    .dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%
+    }
+
+    .line {
+      width: 24px;
+      height: 4px;
+      border-radius: 4px
+    }
+
+    .btn {
+      display: inline-flex;
+      gap: 6px;
+      align-items: center;
+      border: 1px solid var(--b2);
+      background: var(--gn);
+      color: var(--t);
+      padding: 8px 14px;
+      border-radius: 10px;
+      font-weight: 800;
+      font-size: 12.5px;
+      cursor: pointer;
+      text-decoration: none
+    }
+
+    .btn:hover {
+      background: var(--or);
+      color : var(--or);
+    }
+
+    .btn-sm {
+      padding: 6px 10px;
+      font-size: 12px;
+    }
+
+    .btn-sm:hover {
+      color: var(--w);
+    }
+
+    .btn-gn {
+      background: var(--gn);
+      border-color: var(--gn);
+      color: #fff
+    }
+
+    .btn-or {
+      background: var(--or);
+      border-color: var(--or);
+      color: #fff
+    }
+
+    .btn-rd {
+      background: var(--rd);
+      border-color: var(--rd);
+      color: #fff
+    }
+
+    .btn-gh {
+      border-color: transparent;
+      background: var(--gn);
+      color: var(--w)
+    }
+
+    .btn-gh:hover {
+      border-color: transparent;
+      background: var(--or);
+      color: var(--w)
+    }
+
+    .status {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 38px;
+      background: var(--w);
+      border-top: 1px solid var(--b);
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      padding: 0 18px;
+      color: var(--mu);
+      font-size: 11px
+    }
+
+    .sd {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--mu)
+    }
+
+    .sd.ok {
+      background: var(--gn)
+    }
+
+    .sd.run {
+      background: var(--am);
+      animation: pulse .8s infinite
+    }
+
+    .sd.dn {
+      background: var(--bl)
+    }
+
+    @keyframes pulse {
+      50% {
+        opacity: .35
+      }
+    }
+
+    #toast {
+      position: fixed;
+      right: 18px;
+      bottom: 48px;
+      background: #111827;
+      color: #fff;
+      border-radius: 12px;
+      padding: 11px 15px;
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      opacity: 0;
+      transform: translateY(8px);
+      transition: .2s;
+      z-index: 1000;
+      font-size: 12.5px
+    }
+
+    #toast.show {
+      opacity: 1;
+      transform: none
+    }
+
+    .empty {
+      color: var(--mu);
+      font-style: italic;
+      font-size: 12px
+    }
+
+    @media(max-width:900px) {
+      .work.active {
+        display: block;
+        height: auto
+      }
+
+      .left {
+        width: 100%;
+        border-right: 0;
+        border-bottom: 1px solid var(--b)
+      }
+
+      .right {
+        height: 520px
+      }
+
+      .cards,
+      .grid,
+      .grid3 {
+        grid-template-columns: 1fr
+      }
+
+      .arc-row {
+        grid-template-columns: 1fr
+      }
+
+      .nav-sub {
+        display: none
+      }
+    }
+  
+    /* ── Onglets chemins ex-æquo ── */
+    .path-tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;align-items:center}
+    .path-tab-lbl{font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin-right:4px}
+    .path-tab-btn{min-width:34px;height:34px;padding:0 10px;border-radius:8px;border:1.5px solid var(--border);background:#fff;color:var(--muted);font-size:12.5px;font-weight:700;cursor:pointer;transition:all .15s;display:flex;align-items:center;justify-content:center}
+    .path-tab-btn:hover{border-color:#9ca3af;color:var(--text);background:#f9fafb}
+    .path-tab-btn.active-min{background:var(--or);color:#fff;border-color:var(--or)}
+    .path-tab-btn.active-max{background:var(--bl);color:#fff;border-color:var(--bl)}
+    .path-exaequo-note{background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:8px 12px;margin-bottom:10px;font-size:12.5px;color:#1d4ed8;display:none;align-items:center;gap:7px}
+    .path-exaequo-note.show{display:flex}
+</style>
+  </head>
+
+  <body>
+    <nav class="app-nav"><a class="nav-ib" href="index.html" title="Accueil"><i
+          class="bi bi-house"></i></a><button
+        class="nav-ib" id="back" onclick="showPage('home')"
+        style="display:none"><i class="bi bi-arrow-left"></i></button>
+      <div>
+        <div id="nt" class="nav-title">Plus Court / Long Chemin</div>
+        <div id="ns" class="nav-sub">Bellman-Ford —
+          d(j)=min/max{d(i)+w(i,j)}</div>
+      </div>
+      <div class="nav-right"><button class="btn btn-gn btn-sm" id="runBtn"
+          onclick="runBellman()" style="display:none"><i
+            class="bi bi-play-fill"></i> Calculer</button><button
+          class="btn btn-gh btn-sm" id="resetBtn"
+          onclick="resetModule()"><i class="bi bi-trash3"></i>
+          Reset</button></div>
+    </nav>
+    <div id="page-home" class="page active">
+      <div class="wrap">
+        <div class="hero-title">Plus Court / Long Chemin</div>
+        <p class="muted">Analyse Bellman-Ford sur graphe orienté valué. Toutes
+          les saisies sont validées et non négatives.
+        </p>
+        <div class="cards">
+          <div class="choice" onclick="loadExample()">
+            <div class="ic ex"><i class="bi bi-book-half"></i></div>
+            <h3>Exemple du cours</h3>
+            <p class="muted">Source A, puits B, 3 chemins optimaux ex-æquo.</p>
+          </div>
+          <div class="choice" onclick="showPage('create')">
+            <div class="ic cu"><i class="bi bi-plus-circle"></i></div>
+            <h3>Nouveau réseau</h3>
+            <p class="muted">Créer un graphe orienté avec poids positifs ou
+              nuls.</p>
+          </div>
+        </div>
+        <div class="saved">
+          <h6 class="muted"><i class="bi bi-clock-history"></i> Réseaux
+            récents</h6>
+          <div id="saved-list"><span class="empty">Aucun réseau
+              sauvegardé.</span></div>
+        </div>
+      </div>
+    </div>
+    <div id="page-create" class="page">
+      <div class="wrap">
+        <div class="form-card">
+          <div class="form-title"><i
+              class="bi bi-pencil-square"></i>Informations</div>
+          <div class="grid">
+            <div class="fg"><label class="fl">Nom <span>*</span></label><input
+                id="net-name" maxlength="60"
+                placeholder="Réseau routier"></div>
+            <div class="fg"><label class="fl">Unité</label><input id="unit"
+                maxlength="10" value="km"></div>
+          </div>
+        </div>
+        <div class="form-card">
+          <div class="form-title"><i class="bi bi-diagram-3"></i>Sommets</div>
+          <div class="grid3">
+            <div class="fg"><label class="fl">Source
+                <span>*</span></label><input id="src" maxlength="6"
+                style="text-transform:uppercase"></div>
+            <div class="fg"><label class="fl">Puits <span>*</span></label><input
+                id="snk" maxlength="6"
+                style="text-transform:uppercase"></div>
+            <div class="fg"><label class="fl">Intermédiaire</label>
+              <div style="display:flex;gap:7px"><input id="node-in"
+                  maxlength="6" style="text-transform:uppercase"
+                  onkeydown="if(event.key==='Enter'){event.preventDefault();addNode()}"><button
+                  class="btn btn-gn"
+                  onclick="addNode()">+</button></div>
+            </div>
+          </div>
+          <div class="tag-wrap mt-3" id="tags"><span class="empty">Aucun sommet
+              intermédiaire</span></div>
+        </div>
+        <div class="form-card">
+          <div class="form-title"><i class="bi bi-arrow-right-circle"></i>Arcs
+            et poids</div>
+          <div id="arcs-list"><span class="empty">Aucun arc.</span></div><button
+            class="btn" onclick="addArc()"><i
+              class="bi bi-plus"></i> Ajouter un arc</button>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap"><button
+            class="btn btn-gn" onclick="submitNetwork()"><i
+              class="bi bi-check-lg"></i> Créer et analyser</button><button
+            class="btn btn-gh"
+            onclick="showPage('home')">Annuler</button></div>
+      </div>
+    </div>
+    <div id="page-work" class="work">
+      <aside class="left">
+        <div class="kpis">
+          <div class="kpi">
+            <div class="v" id="k-opt">—</div>
+            <div class="l">Coût optimal</div>
+          </div>
+          <div class="kpi">
+            <div class="v" id="k-n">0</div>
+            <div class="l">Sommets</div>
+          </div>
+          <div class="kpi">
+            <div class="v" id="k-a">0</div>
+            <div class="l">Arcs</div>
+          </div>
+        </div>
+        <div class="mode"><button class="pill min on" id="pmin"
+            onclick="setMode('min')"><i
+              class="bi bi-arrow-down-circle-fill"></i> MIN</button><button
+            class="pill max" id="pmax"
+            onclick="setMode('max')"><i class="bi bi-arrow-up-circle"></i>
+            MAX</button><span class="muted"
+            id="mode-label">Plus court chemin</span></div>
+        <div class="panel">
+          <h5 style="font-weight:900">Résultat optimal</h5>
+          <div class="muted">Coût <span id="word">minimal</span> : <b id="cost"
+              style="color:var(--or);font-size:22px">—</b></div>
+          <div class="mt-3">
+            <div class="muted mb-2">Chemin optimal :</div>
+            <div class="path-exaequo-note" id="pcc-exaequo"><i
+                class="bi bi-info-circle-fill"></i><span
+                id="pcc-exaequo-text"></span></div>
+            <div class="path-tabs" id="pcc-tabs" style="display:none"><span
+                class="path-tab-lbl">Configuration :</span><div
+                id="pcc-tab-btns"
+                style="display:flex;gap:5px;flex-wrap:wrap"></div></div>
+            <div class="path-nodes" id="path-view"><span class="empty">Cliquez
+                sur Calculer</span></div>
+            <div id="ties" class="mt-3" style="display:none"></div>
+          </div>
+          <div class="mt-3" style="display:flex;gap:7px;flex-wrap:wrap"><button
+              class="btn btn-or btn-sm"
+              onclick="exportGraphPNG()"><i class="bi bi-download"></i> Exporter
+              en PNG</button><button
+              class="btn btn-rd btn-sm" onclick="resetCalc()"><i
+                class="bi bi-arrow-counterclockwise"></i> Reset
+              calcul</button></div>
+        </div>
+        <div class="panel">
+          <h6 style="font-weight:900">Tableau des distances</h6>
+          <div style="overflow:auto">
+            <table>
+              <thead>
+                <tr>
+                  <th>Sommet</th>
+                  <th>Préd.</th>
+                  <th>Calcul</th>
+                  <th style="text-align:right">d(j)</th>
+                </tr>
+              </thead>
+              <tbody id="dist-body">
+                <tr>
+                  <td colspan="4" class="empty" style="text-align:center">Pas
+                    encore calculé</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </aside>
+      <section class="right">
+        <div class="gh"><b>Visualisation du graphe</b>
+          <div class="gh-a"><button class="btn btn-sm btn-gh"
+              onclick="if(cy)cy.fit(undefined,35)"><i
+                class="bi bi-arrows-fullscreen"></i></button><button
+              class="btn btn-sm btn-gh" onclick="resetLayout()"><i
+                class="bi bi-arrow-repeat"></i></button><button
+              class="btn btn-sm btn-or" onclick="exportGraphPNG()"><i
+                class="bi bi-download"></i> PNG</button></div>
+        </div>
+        <div id="cy-main"></div>
+        <div class="legend"><span class="li"><i class="dot"
+              style="background:var(--bl)"></i>Source</span><span
+            class="li"><i class="dot"
+              style="background:var(--gn2)"></i>Puits</span><span class="li"><i
+              class="line"
+              style="background:var(--or)"></i>Chemin optimal</span></div>
+      </section>
+    </div>
+    <div class="status"><i id="sd" class="sd"></i><span id="st">Prêt</span><span
+        style="margin-left:auto">Bellman-Ford
+        robuste — export PNG</span></div>
+    <div id="toast"></div>
+    <script>
+    'use strict';
+    const STORE = 'ro_pcc_nets_v2'; let SRC = '', SNK = '', NODES = [], ARCS = {}, POS = {}, UNIT = 'km', NET_NAME = '', MODE = 'min'; let DIST = {}, VIA = {}, DETAIL = {}, OPT_PATHS = [], ACTIVE_PATH = 0, cy = null, cNodes = [], cArcs = [], saved = [];
+    const EX = { name: 'Exemple cours — M. Gaye UCAO', source: 'A', sink: 'B', unit: 'km', nodes: ['A', 'C', 'D', 'E', 'F', 'G', 'B'], arcs: { 'A-C': 2, 'A-E': 5, 'A-G': 3, 'C-D': 3, 'C-E': 6, 'G-E': 4, 'G-F': 3, 'E-F': 2, 'E-B': 2, 'C-F':8, 'D-B': 2, 'F-B': 1, 'E-D': 2 }, pos: { A: { x: 100, y: 270 }, C: { x: 260, y: 160 }, E: { x: 340, y: 290 }, G: { x: 260, y: 390 }, D: { x: 440, y: 150 }, F: { x: 440, y: 390 }, B: { x: 580, y: 270 } } };
+    const $ = id => document.getElementById(id), css = v => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+    function toast(msg, type = 'ok') { const c = { ok: 'var(--gn)', warn: 'var(--am)', err: 'var(--rd)' }[type] || 'var(--bl)'; const ic = { ok: 'check-circle', warn: 'exclamation-triangle', err: 'x-circle' }[type] || 'info-circle'; $('toast').innerHTML = `<i class="bi bi-${ic}" style="color:${c}"></i>${esc(msg)}`; $('toast').classList.add('show'); clearTimeout($('toast')._t); $('toast')._t = setTimeout(() => $('toast').classList.remove('show'), 2800) }
+    function setSt(s, t) { $('sd').className = 'sd ' + (s === 'run' ? 'run' : s === 'dn' ? 'dn' : s === 'ok' ? 'ok' : ''); $('st').textContent = t } function esc(x) { return String(x ?? '').replace(/[&<>"]/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[m])) } function fmt(v) { if (v === Infinity) return '∞'; if (v === -Infinity) return '-∞'; return Number.isInteger(v) ? String(v) : String(Math.round(v * 100) / 100) }
+    function positiveNumber(v, label, { min = 0, integer = false } = {}) { const n = Number(v); if (!Number.isFinite(n) || n < min) throw new Error(`${label} doit être numérique et ≥ ${min}.`); return integer ? Math.trunc(n) : n } function nodeId(v, label) { const s = String(v || '').trim().toUpperCase(); if (!s) throw new Error(`${label} requis.`); if (!/^[A-Z0-9_]{1,6}$/.test(s)) throw new Error(`${label} invalide : lettres/chiffres/underscore, 6 max.`); return s }
+    function showPage(p) { ['home', 'create'].forEach(id => $('page-' + id).classList.toggle('active', id === p)); $('page-work').classList.toggle('active', p === 'work'); $('back').style.display = p === 'create' ? '' : 'none'; $('runBtn').style.display = p === 'work' ? '' : 'none'; $('nt').textContent = p === 'create' ? 'Nouveau réseau' : p === 'work' ? NET_NAME : 'Plus Court / Long Chemin'; $('ns').textContent = p === 'work' ? `Source ${SRC} → Puits ${SNK}` : 'Bellman-Ford — d(j)=min/max{d(i)+w(i,j)}'; if (p === 'home') { loadSaved(); renderSaved() } if (p === 'create') initForm(); if (p === 'work') { updateKPI(); setTimeout(initCy, 80) } }
+    function applyNet(n) { SRC = n.source; SNK = n.sink; NODES = [...n.nodes]; ARCS = { ...n.arcs }; POS = { ...(n.pos || {}) }; UNIT = n.unit || 'km'; NET_NAME = n.name; resetCalc(true); setSt('ok', `${NET_NAME} chargé`) } function loadExample() { applyNet(EX); showPage('work'); toast('Exemple chargé') }
+    function initForm() { cNodes = []; cArcs = [];['net-name', 'src', 'snk', 'node-in'].forEach(id => $(id).value = ''); $('unit').value = 'km'; renderTags(); renderArcsForm() } function addNode() { try { const n = nodeId($('node-in').value, 'Sommet'); const s = $('src').value.trim().toUpperCase(), k = $('snk').value.trim().toUpperCase(); if (cNodes.includes(n) || n === s || n === k) throw new Error('Identifiant déjà utilisé.'); cNodes.push(n); $('node-in').value = ''; renderTags(); renderArcsForm() } catch (e) { toast(e.message, 'warn') } } function remNode(n) { cNodes = cNodes.filter(x => x !== n); cArcs = cArcs.filter(a => a.f !== n && a.t !== n); renderTags(); renderArcsForm() } function renderTags() { $('tags').innerHTML = cNodes.length ? cNodes.map(n => `<span class="tag">${esc(n)} <button class="btn btn-sm btn-gh" style="padding:0 2px" onclick="remNode('${esc(n)}')">×</button></span>`).join('') : '<span class="empty">Aucun sommet intermédiaire</span>' }
+    function addArc() { cArcs.push({ f: '', t: '', w: 1 }); renderArcsForm() } function remArc(i) { cArcs.splice(i, 1); renderArcsForm() } function allFormNodes() { const a = []; try { const s = $('src').value.trim().toUpperCase(), k = $('snk').value.trim().toUpperCase(); if (s) a.push(s); a.push(...cNodes); if (k) a.push(k) } catch { } return [...new Set(a)] } function renderArcsForm() { const all = allFormNodes(); const opts = all.map(n => `<option value="${esc(n)}">${esc(n)}</option>`).join(''); $('arcs-list').innerHTML = cArcs.length ? cArcs.map((a, i) => `<div class="arc-row"><div class="fg"><label class="fl">De</label><select id="af${i}"><option value="">—</option>${opts}</select></div><div class="fg"><label class="fl">Vers</label><select id="at${i}"><option value="">—</option>${opts}</select></div><div class="fg"><label class="fl">Poids</label><input id="aw${i}" type="number" min="0" step="0.01" value="${esc(a.w)}"></div><button class="btn btn-rd" onclick="remArc(${i})"><i class="bi bi-trash3"></i></button></div>`).join('') : '<span class="empty">Aucun arc.</span>'; cArcs.forEach((a, i) => { if ($('af' + i)) $('af' + i).value = a.f; if ($('at' + i)) $('at' + i).value = a.t }) }
+    function readArcsForm() { cArcs.forEach((a, i) => { a.f = $('af' + i).value; a.t = $('at' + i).value; a.w = positiveNumber($('aw' + i).value, `Poids arc ${i + 1}`) }) } function submitNetwork() { try { readArcsForm(); const name = $('net-name').value.trim(); if (!name) throw new Error('Nom requis.'); const s = nodeId($('src').value, 'Source'), k = nodeId($('snk').value, 'Puits'); if (s === k) throw new Error('Source et puits doivent être distincts.'); if (!cArcs.length) throw new Error('Ajoutez au moins un arc.'); const all = [s, ...cNodes, k]; NODES = [...new Set(all)]; ARCS = {}; for (const [i, a] of cArcs.entries()) { if (!a.f || !a.t) throw new Error(`Arc ${i + 1} incomplet.`); if (a.f === a.t) throw new Error(`Arc ${i + 1} : boucle interdite.`); ARCS[`${a.f}-${a.t}`] = a.w } SRC = s; SNK = k; NET_NAME = name; UNIT = $('unit').value.trim() || 'km'; autoLayout(); resetCalc(true); saveNet(); showPage('work'); toast(`Réseau « ${name} » créé`) } catch (e) { toast(e.message, 'err') } }
+    function edgeList() { return Object.keys(ARCS).map(id => { const [from, to] = id.split('-'); return { id, from, to, w: Number(ARCS[id]) || 0 } }).filter(e => NODES.includes(e.from) && NODES.includes(e.to)) } function autoLayout() { POS = {}; const layer = { [SRC]: 0 }, q = [SRC]; while (q.length) { const u = q.shift(); edgeList().forEach(e => { if (e.from === u && layer[e.to] === undefined) { layer[e.to] = (layer[u] || 0) + 1; q.push(e.to) } }) } NODES.forEach(n => { if (layer[n] === undefined) layer[n] = 1 }); layer[SNK] = Math.max(...Object.values(layer)); const by = {}; NODES.forEach(n => (by[layer[n]] = by[layer[n]] || []).push(n)); const W = 620, H = 430, L = Math.max(...Object.keys(by).map(Number)); Object.keys(by).forEach(l => by[l].forEach((n, i) => POS[n] = { x: 70 + (Number(l)) * ((W - 140) / Math.max(1, L)), y: 70 + i * ((H - 140) / Math.max(1, by[l].length - 1)) })) }
+    function setMode(m) { if (!['min', 'max'].includes(m)) return; MODE = m; $('pmin').classList.toggle('on', m === 'min'); $('pmax').classList.toggle('on', m === 'max'); $('mode-label').textContent = m === 'min' ? 'Plus court chemin' : 'Plus long chemin'; $('word').textContent = m === 'min' ? 'minimal' : 'maximal'; resetCalc(true); refreshCy(true); toast(`Mode ${m.toUpperCase()} activé`) }
+    function runBellman() { try { if (!NODES.length) throw new Error('Aucun graphe chargé.'); setSt('run', 'Calcul Bellman-Ford…'); const edges = edgeList(), isMin = MODE === 'min', INF = isMin ? Infinity : -Infinity, EPS = 1e-9; DIST = {}; VIA = {}; DETAIL = {}; OPT_PATHS = []; NODES.forEach(n => { DIST[n] = INF; VIA[n] = null; DETAIL[n] = [] }); DIST[SRC] = 0; for (let pass = 1; pass < NODES.length; pass++) { let changed = false; for (const e of edges) { if (DIST[e.from] === INF) continue; const cand = DIST[e.from] + e.w, ok = isMin ? cand < DIST[e.to] - EPS : cand > DIST[e.to] + EPS; if (ok) { DIST[e.to] = cand; VIA[e.to] = e.from; changed = true } } if (!changed) break } const reach = reachable(SRC, false), can = reachable(SNK, true); for (const e of edges) { if (DIST[e.from] === INF) continue; const cand = DIST[e.from] + e.w, ok = isMin ? cand < DIST[e.to] - EPS : cand > DIST[e.to] + EPS; if (ok && reach[e.from] && can[e.to]) throw new Error('Cycle améliorant atteignable vers le puits : optimum non borné.') } NODES.forEach(j => { if (j === SRC) { DETAIL[j] = [{ text: 'Source' }]; return } const preds = edges.filter(e => e.to === j); DETAIL[j] = preds.filter(p => DIST[p.from] !== INF).map(p => ({ from: p.from, dI: DIST[p.from], w: p.w, total: DIST[p.from] + p.w })); if (!DETAIL[j].length) DETAIL[j] = [{ text: preds.length ? 'Non atteignable' : 'Aucun prédécesseur' }] }); if (DIST[SNK] !== INF) findAllOpt(SRC, SNK, DIST[SNK]); updateKPI(); renderDist(); renderPath(); highlightCy(); setSt('dn', `d(${SNK}) = ${fmt(DIST[SNK])} ${UNIT}`); toast('Calcul terminé') } catch (e) { setSt('', 'Erreur'); toast(e.message, 'err'); highlightCy() } }
+    function reachable(start, rev) { const seen = { [start]: true }, st = [start], edges = edgeList(); while (st.length) { const u = st.pop(); edges.forEach(e => { const ok = rev ? e.to === u : e.from === u, v = rev ? e.from : e.to; if (ok && !seen[v]) { seen[v] = true; st.push(v) } }) } return seen } function findAllOpt(src, snk, opt) { const EPS = 1e-7, INF = MODE === 'min' ? Infinity : -Infinity, tight = {}; edgeList().forEach(e => { if (DIST[e.from] === INF || DIST[e.to] === INF) return; if (Math.abs(DIST[e.from] + e.w - DIST[e.to]) <= EPS) (tight[e.from] = tight[e.from] || []).push(e) }); function dfs(u, path) { if (OPT_PATHS.length >= 200) return; if (u === snk) { OPT_PATHS.push([...path]); return } (tight[u] || []).forEach(e => { if (!path.includes(e.to)) { path.push(e.to); dfs(e.to, path); path.pop() } }) } dfs(src, [src]) }
+    function updateKPI() { const d = DIST[SNK]; $('k-opt').textContent = Number.isFinite(d) ? `${fmt(d)} ${UNIT}` : '—'; $('cost').textContent = Number.isFinite(d) ? fmt(d) : '—'; $('k-n').textContent = NODES.length; $('k-a').textContent = Object.keys(ARCS).length } function renderPath() {
+      const pv = $('path-view');
+      if (!OPT_PATHS.length) { pv.innerHTML = '<span class="empty">Aucun chemin trouvé</span>'; $('pcc-exaequo').classList.remove('show'); $('pcc-tabs').style.display='none'; return }
+      if (ACTIVE_PATH >= OPT_PATHS.length) ACTIVE_PATH = 0;
+      // Note ex-æquo
+      const note = $('pcc-exaequo'), tabs = $('pcc-tabs'), tabBtns = $('pcc-tab-btns');
+      if (OPT_PATHS.length > 1) {
+        note.classList.add('show');
+        $('pcc-exaequo-text').textContent = `Ex-æquo : ${OPT_PATHS.length} chemins optimaux avec le même coût — naviguez entre les configurations.`;
+        tabs.style.display = '';
+        tabBtns.innerHTML = OPT_PATHS.map((p, i) => `<button class="path-tab-btn ${i===ACTIVE_PATH ? (MODE==='min'?'active-min':'active-max') : ''}" onclick="selectPath(${i})">${i+1}</button>`).join('');
+      } else { note.classList.remove('show'); tabs.style.display='none'; }
+      // Afficher TOUS les chemins optimaux avec couleurs MODE
+      const pathColor = MODE === 'min' ? 'min' : 'max';
+      pv.innerHTML = OPT_PATHS.map((path, pathIdx) => `<div style="margin-bottom:12px;padding:10px;background:${MODE==='min'?'#f0fdf4':'#fef3c7'};border-radius:8px;border-left:3px solid ${MODE==='min'?'var(--gn)':'var(--or)'};">${path.map((n, i) => `<span class="node-b ${pathColor}">${esc(n)}</span>${i < path.length - 1 ? `<span class="arr" style="margin:0 6px">→<span style="font-size:10px;color:#9ca3af">(${ARCS[path[i]+'-'+path[i+1]]??''})</span></span>` : ''}`).join('')}</div>`).join('');
+    }
+    function selectPath(idx) { ACTIVE_PATH = idx; renderPath(); highlightCy(); } function renderDist() { const tb = $('dist-body'); tb.innerHTML = ''; NODES.forEach(j => { const opt = OPT_PATHS.some(p => p.includes(j)); const preds = edgeList().filter(e => e.to === j).map(e => e.from).join(', ') || '—'; let calc = ''; const det = DETAIL[j] || []; if (j === SRC) calc = 'source'; else if (det[0]?.text) calc = det[0].text; else calc = (MODE === 'min' ? 'min' : 'max') + '(' + det.map(c => `${fmt(c.dI)}+${fmt(c.w)}`).join(', ') + ')'; const tr = document.createElement('tr'); if (opt) tr.className = 'opt-row'; tr.innerHTML = `<td><b>${esc(j)}</b></td><td>${esc(preds)}</td><td><code>${esc(calc)}</code></td><td style="text-align:right;color:var(--or);font-weight:900">${DIST[j] === Infinity || DIST[j] === -Infinity ? '∞' : fmt(DIST[j])}</td>`; tb.appendChild(tr) }) }
+    function resetCalc(silent = false) { DIST = {}; VIA = {}; DETAIL = {}; OPT_PATHS = []; updateKPI?.(); if ($('path-view')) $('path-view').innerHTML = '<span class="empty">Cliquez sur Calculer</span>'; if ($('ties')) $('ties').innerHTML = ''; ACTIVE_PATH = 0; if ($('pcc-exaequo')) $('pcc-exaequo').classList.remove('show'); if ($('pcc-tabs')) $('pcc-tabs').style.display='none'; if ($('dist-body')) $('dist-body').innerHTML = '<tr><td colspan="4" class="empty" style="text-align:center">Pas encore calculé</td></tr>'; refreshCy(false); setSt('', 'Prêt'); if (!silent) toast('Calcul réinitialisé') } function resetModule() { if (!confirm('Réinitialiser le module et supprimer les réseaux récents ?')) return; localStorage.removeItem(STORE); SRC = SNK = NET_NAME = ''; NODES = []; ARCS = {}; POS = {}; resetCalc(true); if (cy) { cy.destroy(); cy = null } showPage('home'); setSt('', 'Module réinitialisé'); toast('Cache local nettoyé') }
+    function cyStyle() { const OR = css('--or'), OR2 = css('--or2'); return [{ selector: 'node', style: { 'background-color': '#fff', 'border-color': '#cbd5e1', 'border-width': 2, 'label': 'data(label)', 'font-weight': 800, 'font-size': 13, 'color': '#334155', 'text-valign': 'center', 'text-halign': 'center', 'width': 52, 'height': 52, 'transition-property': 'background-color,border-color,width,height', 'transition-duration': '220ms' } }, { selector: `node[id="${SRC}"]`, style: { 'background-color': '#3b82f6', 'border-color': '#2563eb', 'color': '#fff' } }, { selector: `node[id="${SNK}"]`, style: { 'background-color': '#16a34a', 'border-color': '#15803d', 'color': '#fff' } }, { selector: 'node.computed', style: { 'label': 'data(dlabel)', 'font-size': 11, 'text-wrap': 'wrap', 'text-max-width': 55 } }, { selector: 'node.on-opt', style: { 'background-color': OR, 'border-color': OR2, 'border-width': 4, 'color': '#fff' } }, { selector: 'edge', style: { 'width': 1.8, 'line-color': '#cbd5e1', 'target-arrow-color': '#cbd5e1', 'target-arrow-shape': 'triangle', 'curve-style': 'bezier', 'control-point-step-size': 42, 'label': 'data(label)', 'font-size': 11, 'color': '#64748b', 'text-background-color': '#fff', 'text-background-opacity': 1, 'text-background-padding': 2, 'text-rotation': 'autorotate', 'transition-property': 'line-color,target-arrow-color,width', 'transition-duration': '240ms' } }, { selector: 'edge.optimal', style: { 'line-color': OR, 'target-arrow-color': OR, 'width': 5.5, 'color': OR2, 'font-weight': 900, 'z-index': 99 } }, { selector: 'node:selected', style: { 'border-color': '#f59e0b', 'border-width': 4 } }] }
+    function initCy() { if (typeof cytoscape === 'undefined') { $('cy-main').innerHTML = '<div class="empty" style="padding:50px;text-align:center">Cytoscape.js indisponible.</div>'; return } if (cy) { cy.destroy(); cy = null } if (!NODES.length) return; const els = []; NODES.forEach(id => els.push({ group: 'nodes', data: { id, label: id }, position: POS[id] || { x: Math.random() * 500 + 50, y: Math.random() * 350 + 50 } })); Object.keys(ARCS).forEach(id => { const [u, v] = id.split('-'); els.push({ group: 'edges', data: { id, source: u, target: v, label: String(ARCS[id]) } }) }); cy = cytoscape({ container: $('cy-main'), elements: els, layout: { name: 'preset' }, style: cyStyle(), minZoom: .2, maxZoom: 4, wheelSensitivity: .15 }); cy.fit(undefined, 40); cy.style().update(); cy.animate({ zoom: cy.zoom() * 1.03, pan: cy.pan() }, { duration: 180, complete: () => cy && cy.fit(undefined, 40) }); if (OPT_PATHS.length) highlightCy() } function refreshCy(animated) { if (!cy) return; cy.batch(() => { cy.style(cyStyle()); cy.nodes().removeClass('on-opt computed'); cy.edges().removeClass('optimal'); cy.nodes().forEach(n => n.removeData('dlabel')) }); cy.style().update(); cy.resize(); if (animated) { const z = cy.zoom(), p = cy.pan(); cy.animate({ zoom: z * 1.02, pan: p }, { duration: 120, complete: () => cy && cy.animate({ zoom: z, pan: p }, { duration: 120 }) }) } }
+    function highlightCy() { if (!cy) return; cy.batch(() => { cy.style(cyStyle()); cy.nodes().removeClass('on-opt computed'); cy.edges().removeClass('optimal'); NODES.forEach(n => { const d = DIST[n]; if (Number.isFinite(d)) { const nd = cy.getElementById(n); nd.addClass('computed'); nd.data('dlabel', `${n}\nd=${fmt(d)}`) } }); const activePath = OPT_PATHS[ACTIVE_PATH] || OPT_PATHS[0] || [];
+      activePath.forEach(n => cy.getElementById(n).addClass('on-opt'));
+      for (let i = 0; i < activePath.length - 1; i++) cy.getElementById(`${activePath[i]}-${activePath[i+1]}`).addClass('optimal') }); cy.style().update(); cy.resize();/* Forçage absolu demandé : style recalculé après ajout des classes pour garantir le orange var(--or). */cy.style(cyStyle()).update(); if (OPT_PATHS.length) { const z = cy.zoom(), p = cy.pan(); cy.animate({ zoom: z * 1.015, pan: p }, { duration: 140, complete: () => cy && cy.animate({ zoom: z, pan: p }, { duration: 140 }) }) } }
+    function resetLayout() { if (!cy) return; cy.layout({ name: 'breadthfirst', directed: true, padding: 35, spacingFactor: 1.35, animate: true, animationDuration: 450 }).run(); setTimeout(() => cy && cy.fit(undefined, 35), 500) } function exportGraphPNG() { try { if (!cy) throw new Error('Aucun graphe à exporter.'); if (OPT_PATHS.length) highlightCy(); const a = document.createElement('a'); a.href = cy.png({ full: true, scale: 2, bg: '#ffffff' }); a.download = safe(`${NET_NAME || 'graphe'}_${MODE}`) + '.png'; document.body.appendChild(a); a.click(); a.remove(); toast('PNG exporté') } catch (e) { toast(e.message, 'err') } } function safe(s) { return String(s).toLowerCase().replace(/[^a-z0-9_-]+/gi, '_').replace(/^_+|_+$/g, '') || 'graphe' }
+    function saveNet() { try { let s = JSON.parse(localStorage.getItem(STORE) || '[]'); const d = { name: NET_NAME, source: SRC, sink: SNK, nodes: NODES, arcs: ARCS, pos: POS, unit: UNIT, date: new Date().toLocaleDateString('fr-FR') }; s = s.filter(x => x.name !== NET_NAME); s.unshift(d); s = s.slice(0, 8); localStorage.setItem(STORE, JSON.stringify(s)); saved = s } catch { } } function loadSaved() { try { saved = JSON.parse(localStorage.getItem(STORE) || '[]') } catch { saved = [] } } function renderSaved() { const el = $('saved-list'); el.innerHTML = saved.length ? saved.map((s, i) => `<div class="saved-item" onclick="restoreNet(${i})"><div><b>${esc(s.name)}</b><div class="muted" style="font-size:12px">${s.nodes.length} sommets · ${Object.keys(s.arcs || {}).length} arcs · ${esc(s.date || '')}</div></div><i class="bi bi-arrow-right-circle muted"></i></div>`).join('') : '<span class="empty">Aucun réseau sauvegardé.</span>' } function restoreNet(i) { if (!saved[i]) return; applyNet(saved[i]); showPage('work'); toast('Réseau restauré') }
+    ['src', 'snk'].forEach(id => $(id).addEventListener('input', renderArcsForm));
+    loadSaved(); renderSaved(); setSt('', 'Sélectionnez un réseau');
+  </script>
+    <script>(function () { function c() { var b = a.contentDocument || a.contentWindow.document; if (b) { var d = b.createElement('script'); d.innerHTML = "window.__CF$cv$params={r:'9fef3b843c80f81a',t:'MTc3OTMyMDkwOQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);"; b.getElementsByTagName('head')[0].appendChild(d) } } if (document.body) { var a = document.createElement('iframe'); a.height = 1; a.width = 1; a.style.position = 'absolute'; a.style.top = 0; a.style.left = 0; a.style.border = 'none'; a.style.visibility = 'hidden'; document.body.appendChild(a); if ('loading' !== document.readyState) c(); else if (window.addEventListener) document.addEventListener('DOMContentLoaded', c); else { var e = document.onreadystatechange || function () { }; document.onreadystatechange = function (b) { e(b); 'loading' !== document.readyState && (document.onreadystatechange = e, c()) } } } })();</script>
+  </body>
+
+</html>

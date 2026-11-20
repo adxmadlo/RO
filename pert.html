@@ -1,0 +1,1937 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>PERT/CPM — Planificateur de Projet</title>
+    <link rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=DM+Mono:wght@400;500&display=swap"
+      rel="stylesheet">
+    <script
+      src="https://cdn.jsdelivr.net/npm/cytoscape@3.28.1/dist/cytoscape.min.js"></script>
+    <style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --w:#fff;--off:#f8fafc;--off2:#f1f5f9;
+  --b:#e5e7eb;--b2:#cbd5e1;--b3:#94a3b8;
+  --t:#111827;--t2:#64748b;--t3:#94a3b8;
+  --pk:#e8194b;--pk-lt:#fff0f4;--pk-bd:#ffd1de;--pk-tx:#bf0d39;
+  --gn:#16a34a;--gn-lt:#f0fdf4;--gn-bd:#bbf7d0;
+  --am:#b45309;--am-lt:#fffbeb;--am-bd:#fde68a;
+  --bl:#2563eb;--bl2:#6366f1;--bl-lt:#eff6ff;--bl-bd:#bfdbfe;
+  --fn:'Inter',Segoe UI,system-ui,-apple-system,sans-serif;--mn:'DM Mono',monospace;
+  --r:8px;--r2:5px;--r3:14px;--r4:20px;
+  --s:0 1px 3px rgba(0,0,0,.05),0 1px 2px rgba(0,0,0,.04);
+  --s2:0 4px 20px rgba(0,0,0,.08),0 2px 6px rgba(0,0,0,.04);
+}
+html,body{height:100%;background:var(--off);color:var(--t);font-family:var(--fn);font-size:14px;line-height:1.55;overflow:hidden}
+.app{display:flex;height:calc(100vh - 52px)}
+
+/* ═══ SIDEBAR ═══ */
+.sb{width:248px;min-width:248px;background:var(--w);border-right:1px solid var(--b);display:none;flex-direction:column}
+.sb-logo{padding:22px 18px 18px;border-bottom:1px solid var(--b)}
+.logo-row{display:flex;align-items:center;gap:9px;margin-bottom:4px}
+.logo-sq{width:28px;height:28px;background:var(--t);border-radius:6px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:10px;font-weight:700;font-family:var(--mn);flex-shrink:0}
+.logo-nm{font-size:14px;font-weight:700;letter-spacing:-.3px}
+.logo-sm{font-size:10.5px;color:var(--t3);font-family:var(--mn)}
+.nav{padding:8px;flex:1;overflow-y:auto}
+.ngl{font-size:9.5px;color:var(--t3);letter-spacing:1.5px;text-transform:uppercase;padding:5px 10px 3px;font-family:var(--mn)}
+.ni{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:var(--r2);cursor:pointer;color:var(--t2);font-size:13px;font-weight:500;margin-bottom:1px;transition:all .12s;user-select:none}
+.ni:hover{background:var(--off);color:var(--t)}
+.ni.on{background:var(--t);color:#fff}
+.ni i{font-size:14px;width:16px;text-align:center;flex-shrink:0}
+.ndiv{height:1px;background:var(--b);margin:6px 8px}
+.sb-bot{border-top:1px solid var(--b);padding:12px}
+.sb-pl{font-size:9.5px;color:var(--t3);font-family:var(--mn);text-transform:uppercase;letter-spacing:1px;margin-bottom:7px}
+.sb-pi{display:flex;align-items:center;justify-content:space-between;padding:7px 9px;border-radius:var(--r2);cursor:pointer;border:1px solid var(--b);margin-bottom:4px;transition:all .12s}
+.sb-pi:hover{border-color:var(--b2);background:var(--off)}
+.sb-pi.on{border-color:var(--t);background:var(--t)}
+.sb-pi.on .sb-pn{color:#fff}
+.sb-pi.on .sb-pc{color:#888}
+.sb-pn{font-size:11.5px;font-weight:600;color:var(--t);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:148px}
+.sb-pc{font-size:10px;color:var(--t3);font-family:var(--mn)}
+
+/* ═══ MAIN ═══ */
+.main{flex:1;overflow-y:auto;background:var(--off)}
+.app-nav{background:var(--w);border-bottom:1px solid var(--b);padding:12px 20px;display:flex;align-items:center;gap:10px;position:sticky;top:0;z-index:200}
+.nav-ib{width:32px;height:32px;border-radius:9px;background:var(--off);border:1px solid var(--b);display:flex;align-items:center;justify-content:center;color:var(--t2);cursor:pointer;text-decoration:none;transition:.14s;font-size:14px;flex-shrink:0}
+.nav-ib:hover{background:var(--b2);color:var(--t)}
+.nav-title{font-size:15px;font-weight:700;line-height:1.2}
+.nav-sub{font-size:12px;color:var(--t3);line-height:1.3}
+.nav-right{margin-left:auto;display:flex;gap:8px;align-items:center}
+.btn-ghost{border-color:transparent;background:transparent;color:var(--t2)}.btn-ghost:hover{background:var(--off);color:var(--t)}
+.btn-sm{padding:5px 11px;font-size:12px}
+.page{display:none}
+.page.active{display:block}
+.pg{display:none;padding:30px 34px;min-height:100%}
+.pg.on{display:block}
+.ph{margin-bottom:26px;display:flex;justify-content:space-between;align-items:flex-start;gap:14px}
+.ph-l .pt{font-size:21px;font-weight:700;letter-spacing:-.4px;margin-bottom:3px}
+.ph-l .ps{font-size:12px;color:var(--t3)}
+.ph-r{display:flex;gap:7px;flex-shrink:0;flex-wrap:wrap;align-items:flex-start}
+
+/* ═══ BUTTONS ═══ */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 15px;border-radius:var(--r2);border:1px solid var(--b2);background:var(--w);color:var(--t);font-size:12.5px;font-family:var(--fn);font-weight:500;cursor:pointer;transition:all .12s;white-space:nowrap;user-select:none;line-height:1}
+.btn:hover{background:var(--off);border-color:var(--b3)}
+.btn:active{transform:scale(.98)}
+.btn.pri{background:var(--t);color:#fff;border-color:var(--t)}.btn.pri:hover{background:#2a2a2a}
+.btn.sm{padding:5px 10px;font-size:11.5px}
+.btn.xs{padding:4px 8px;font-size:11px}
+.btn.gh{border-color:transparent;background:transparent;color:var(--t2)}.btn.gh:hover{background:var(--off);color:var(--t)}
+.btn.rd{color:var(--pk);border-color:var(--pk-bd)}.btn.rd:hover{background:var(--pk-lt)}
+.btn.bl{color:var(--bl);border-color:var(--bl-bd)}.btn.bl:hover{background:var(--bl-lt)}
+.btn i{font-size:13px}
+
+/* ═══ CARDS ═══ */
+.card{border-radius:var(--r3);padding:20px}
+.card.fl{padding:0;overflow:hidden}
+.ct{font-size:13px;font-weight:700;text-transform:none;letter-spacing:0;color:var(--t);margin-bottom:14px;display:flex;align-items:center;gap:6px}
+.ct i{font-size:13px}
+
+/* ═══ TABLE ═══ */
+.tw{overflow-x:auto}
+table{width:100%;border-collapse:collapse}
+thead tr{border-bottom:1px solid var(--b)}
+th{font-size:11px;font-weight:600;color:var(--t3);padding:10px 14px;white-space:nowrap;text-align:left;letter-spacing:.2px}
+td{padding:11px 14px;border-bottom:1px solid var(--b);font-size:13px;color:var(--t2);vertical-align:middle}
+tbody tr:last-child td{border-bottom:none}
+tbody tr:hover td{background:var(--off)}
+td.st{color:var(--t);font-weight:500}
+
+/* ═══ BADGES ═══ */
+.bdg{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:20px;font-size:10.5px;font-weight:500;white-space:nowrap;line-height:1.4}
+.bdg.cr{background:var(--pk-lt);color:var(--pk-tx);border:1px solid var(--pk-bd)}
+.bdg.nr{background:var(--off2);color:var(--t2);border:1px solid var(--b)}
+.bdg.ok{background:var(--gn-lt);color:var(--gn);border:1px solid var(--gn-bd)}
+.bdg.am{background:var(--am-lt);color:var(--am);border:1px solid var(--am-bd)}
+.dot{width:6px;height:6px;border-radius:50%;display:inline-block;flex-shrink:0}
+.dot.cr{background:var(--pk)}.dot.nr{background:var(--b3)}
+
+/* ═══ FORMS ═══ */
+.fc{background:var(--w);border:1px solid var(--b);border-radius:var(--r3);padding:20px;box-shadow:var(--s);margin-bottom:14px}
+.fc-t{font-size:15px;font-weight:700;color:var(--t);margin-bottom:16px;display:flex;align-items:center;gap:7px}
+.fc-t i{color:var(--t3)}
+.fg{display:flex;flex-direction:column;gap:5px}
+.fl{font-size:11px;font-weight:600;color:var(--t2);letter-spacing:.1px}
+.fl span{color:var(--pk);margin-left:1px}
+input,select,textarea{background:var(--off);border:1px solid var(--b2);color:var(--t);padding:8px 11px;border-radius:var(--r2);font-size:13px;font-family:var(--fn);width:100%;transition:all .12s;outline:none}
+input:focus,select:focus,textarea:focus{border-color:var(--t);background:var(--w);box-shadow:0 0 0 3px rgba(0,0,0,.04)}
+input::placeholder,textarea::placeholder{color:var(--t3)}
+select option{background:var(--w)}
+select[multiple]{padding:4px;min-height:80px}
+select[multiple] option{padding:5px 7px;border-radius:3px;margin-bottom:1px}
+.fhint{font-size:10.5px;color:var(--t3)}
+
+/* ── Import rapide ── */
+.import-box{background:var(--off);border:1px solid var(--b);border-radius:var(--r);padding:12px;margin-bottom:14px}
+.import-box textarea{width:100%;min-height:80px;resize:vertical;font-family:var(--mn);font-size:12px;padding:8px 10px;border-radius:var(--r2);border:1px solid var(--b2);background:var(--w);color:var(--t);outline:none;line-height:1.6}
+.import-box textarea:focus{border-color:var(--bl)}
+.import-box-hint{font-size:11px;color:var(--t3);margin-top:5px;line-height:1.5}
+.import-tabs{display:flex;gap:4px;margin-bottom:12px}
+.itab{padding:5px 13px;border-radius:var(--r4);font-size:12px;font-weight:500;cursor:pointer;border:1px solid var(--b2);background:var(--w);color:var(--t2);transition:all .12s}
+.itab.on{background:var(--t);color:#fff;border-color:var(--t)}
+.itab:hover:not(.on){background:var(--off)}
+
+/* ── Resource toggle ── */
+.res-toggle-bar{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:var(--off);border:1px solid var(--b);border-radius:var(--r);margin-bottom:16px}
+.res-toggle-label{font-size:12.5px;font-weight:600;color:var(--t2);display:flex;align-items:center;gap:7px}
+.res-toggle-label i{color:var(--t3)}
+.res-toggle-hint{font-size:11px;color:var(--t3);margin-left:4px}
+.toggle-sw{width:36px;height:20px;background:var(--b2);border-radius:20px;position:relative;cursor:pointer;transition:all .2s;flex-shrink:0;border:none}
+.toggle-sw.on{background:var(--bl)}
+.toggle-sw::after{content:'';width:14px;height:14px;background:#fff;border-radius:50%;position:absolute;top:3px;left:3px;transition:all .2s;box-shadow:0 1px 3px rgba(0,0,0,.2)}
+.toggle-sw.on::after{left:19px}
+
+/* ── Resource panel (hidden by default) ── */
+.res-panel{display:none;background:var(--bl-lt);border:1px solid var(--bl-bd);border-radius:var(--r);padding:16px;margin-bottom:16px;animation:fadeIn .2s ease}
+.res-panel.visible{display:block}
+.res-kpi-row{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+.res-kpi{background:var(--w);border:1px solid var(--bl-bd);border-radius:var(--r2);padding:12px 15px;flex:1;min-width:120px;text-align:center}
+.res-kpi-val{font-size:20px;font-weight:700;font-family:var(--mn);color:var(--bl);margin-bottom:2px}
+.res-kpi-lbl{font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.5px}
+.res-kpi-val.over{color:var(--pk)}
+.res-bar{height:8px;background:var(--b);border-radius:4px;margin-top:8px;overflow:hidden}
+.res-bar-fill{height:100%;background:var(--bl);border-radius:4px;transition:width .4s ease}
+.res-bar-fill.over{background:var(--pk)}
+@keyframes fadeIn{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
+.te{background:var(--off);border:1px solid var(--b);border-radius:var(--r);padding:13px;margin-bottom:9px;animation:fup .16s ease}
+.te-h{display:flex;justify-content:space-between;align-items:center;margin-bottom:11px}
+.te-l{font-size:11.5px;font-weight:600;color:var(--t2);display:flex;align-items:center;gap:5px}
+.add-te{width:100%;padding:10px;border:1px dashed var(--b2);background:transparent;color:var(--t3);border-radius:var(--r);font-family:var(--fn);font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;transition:all .12s}
+.add-te:hover{border-color:var(--t);color:var(--t);background:var(--w)}
+@keyframes fup{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+
+/* ═══ HOME ═══ */
+.pjgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:13px;margin-top:22px}
+.home-wrap{max-width:960px;margin:0 auto;padding:34px 20px 32px}
+.home-title{font-size:28px;font-weight:900;letter-spacing:-.02em;margin-bottom:6px}
+.home-sub{color:var(--t3);font-size:13px;line-height:1.6;margin-bottom:28px}
+.net-cards{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+@media(max-width:680px){.net-cards{grid-template-columns:1fr}}
+.net-card{background:var(--w);border:1px solid var(--b);border-radius:18px;padding:28px 24px;cursor:pointer;transition:all .16s;text-align:center}
+.net-card:hover{border-color:var(--pk);box-shadow:var(--s2);transform:translateY(-1px)}
+.net-card:active{transform:scale(.99)}
+.nc-icon{width:70px;height:70px;border-radius:20px;display:flex;align-items:center;justify-content:center;margin:0 auto 18px;font-size:28px;color:#fff}
+.nc-icon.ex{background:linear-gradient(135deg,var(--pk),#b00041)}
+.nc-icon.cu{background:linear-gradient(135deg,var(--bl),var(--bl2))}
+.net-card h3{font-weight:700;color:var(--t);margin:0 0 10px}
+.net-card p{color:var(--t2);font-size:13px;line-height:1.5;margin:0;max-width:280px;margin-left:auto;margin-right:auto}
+.home-note{color:var(--t3);font-size:12.5px;margin-top:16px;text-align:center}
+.action-grid{display:grid;grid-template-columns:repeat(2,minmax(240px,1fr));gap:18px;margin-top:22px;max-width:840px;margin-left:auto;margin-right:auto}
+@media(max-width:850px){.action-grid{grid-template-columns:1fr}}
+.pjcard,
+.action-card{background:var(--w);border:1px solid var(--b);border-radius:18px;padding:26px 24px;cursor:pointer;transition:all .16s;box-shadow:var(--s);display:flex;flex-direction:column;gap:18px;align-items:center;text-align:center;min-height:220px}
+.pjcard:hover,
+.action-card:hover{border-color:var(--pk);box-shadow:var(--s2);transform:translateY(-1px)}
+.action-card h3{font-size:17px;font-weight:800;color:var(--t);margin:0}
+.action-card p{font-size:13.5px;color:var(--t2);margin:0;line-height:1.6;max-width:260px}
+.action-card .ic{width:70px;height:70px;border-radius:20px;display:flex;align-items:center;justify-content:center;font-size:28px;color:#fff}
+.action-card .ic.ex{background:linear-gradient(135deg,var(--pk),#b00041)}
+.action-card .ic.cu{background:linear-gradient(135deg,var(--bl),var(--bl2))}
+.pjcard-d{font-size:12px;color:var(--t3);margin-bottom:0}
+.pjcard-m{font-size:11px;color:var(--t3);display:flex;gap:10px;flex-wrap:wrap}
+.pjcard-m span{display:flex;align-items:center;gap:3px}
+.pjcard-tags{display:flex;gap:5px;flex-wrap:wrap;margin-top:9px}
+.empty-s{text-align:center;padding:60px 20px;color:var(--t3);grid-column:1/-1}
+.empty-s i{font-size:36px;display:block;margin-bottom:12px;color:var(--b2)}
+.empty-s p{font-size:13.5px;color:var(--t2);margin-bottom:4px}
+.saved-sec{margin-top:28px}
+.saved-title{font-size:15px;font-weight:700;margin-bottom:14px;display:flex;align-items:center;gap:6px;color:var(--t)}
+.saved-title i{font-size:14px}
+.saved-empty{color:var(--t3);font-size:13px;font-style:italic;padding:20px;text-align:center}
+.pjrow{background:var(--w);border:1px solid var(--b);border-radius:var(--r2);padding:14px 18px;display:flex;justify-content:space-between;align-items:center;gap:16px;cursor:pointer;transition:all .16s;margin-bottom:8px}
+.pjrow:hover{border-color:var(--pk);box-shadow:var(--s2)}
+.pjrow-info{flex:1}
+.pjrow-name{font-size:14px;font-weight:700;color:var(--t);margin-bottom:4px}
+.pjrow-meta{font-size:12px;color:var(--t2);display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+.pjrow-meta span{display:flex;align-items:center;gap:3px}
+.pjrow-meta i{font-size:12px}
+.pjrow-icon{font-size:18px;color:var(--t2);cursor:pointer;flex-shrink:0}
+.pjrow-icon:hover{color:var(--t)}
+
+/* ═══ CALC CARDS ═══ */
+.cg{display:grid;grid-template-columns:repeat(3,1fr);gap:13px}
+@media(max-width:1050px){.cg{grid-template-columns:repeat(2,1fr)}}
+.cc{background:var(--w);border:1px solid var(--b);border-radius:var(--r3);padding:17px 19px;transition:box-shadow .16s}.cc:hover{box-shadow:var(--s2)}
+.cc.cr-c{border-color:var(--pk-bd)}
+.cc-h{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:3px;gap:7px}
+.cc-n{font-size:15px;font-weight:700;color:var(--t);line-height:1.3}
+.cc-d{font-size:11px;color:var(--t3);margin-bottom:13px}
+.cc-s{margin-bottom:11px}.cc-sl{font-size:11px;color:var(--t2);display:flex;align-items:center;gap:5px;margin-bottom:5px;font-weight:500}
+.cc-sl i{font-size:11px;color:var(--t3)}
+.cc-row{display:flex;justify-content:space-between;align-items:center;padding:1.5px 0}
+.cc-rl{font-size:11.5px;color:var(--t3)}.cc-rv{font-size:12px;font-weight:500;font-family:var(--mn);color:var(--t)}
+.cc-div{height:1px;background:var(--b);margin:11px 0}
+.cc-mg{display:flex;justify-content:space-between;align-items:center}
+.cc-mgl{font-size:12px;color:var(--t2);display:flex;align-items:center;gap:5px}
+.mv{padding:3px 11px;border-radius:20px;font-size:11.5px;font-weight:600;font-family:var(--mn)}
+.mv.z{background:var(--pk-lt);color:var(--pk-tx);border:1px solid var(--pk-bd)}
+.mv.p{background:var(--gn-lt);color:var(--gn);border:1px solid var(--gn-bd)}
+
+/* ═══ CRITICAL PATH ═══ */
+.cp-stats{background:var(--w);border:1px solid var(--b);border-radius:var(--r3);padding:20px 24px;box-shadow:var(--s);margin-bottom:14px;display:flex}
+.cp-s{flex:1;border-right:1px solid var(--b);padding:3px 22px}
+.cp-s:first-child{padding-left:0}.cp-s:last-child{border-right:none}
+.cp-sl{font-size:11px;color:var(--t3);margin-bottom:5px}
+.cp-sv{font-size:25px;font-weight:700;color:var(--t);letter-spacing:-.5px}
+.cpf-card{background:var(--w);border:1px solid var(--b);border-radius:var(--r3);padding:22px;box-shadow:var(--s);margin-bottom:14px;overflow-x:auto}
+.cpf-l{font-size:15px;font-weight:700;color:var(--t);display:flex;align-items:center;gap:7px;margin-bottom:20px}
+.cpf-l i{color:var(--pk)}
+.cpf{display:flex;flex-wrap:wrap;gap:0}
+.cpf-row{display:flex;align-items:center;flex-wrap:wrap;gap:0;width:100%;margin-bottom:9px}
+.cpnw{display:flex;flex-direction:column;align-items:center;gap:4px}
+.cpn{padding:9px 14px;border-radius:var(--r);font-size:12px;font-weight:600;text-align:center;min-width:78px;max-width:130px}
+.cpn.st,.cpn.en{background:var(--off2);border:1px solid var(--b2);color:var(--t2);border-radius:50px;min-width:46px;font-size:10.5px}
+.cpn.cr{background:var(--pk-lt);border:1px solid var(--pk-bd);color:var(--pk-tx)}
+.cpn-d{font-size:10px;color:var(--t3);font-family:var(--mn)}
+.cpa{color:var(--t3);font-size:16px;padding:0 4px;margin-top:11px}
+
+/* ═══ GRAPH CANVAS ═══ */
+#pert-canvas{display:block;width:100%;background:var(--w);cursor:default}
+.go{background:var(--w);border:1px solid var(--b);border-radius:var(--r3);overflow:hidden;box-shadow:var(--s)}
+.g-leg{display:flex;gap:16px;flex-wrap:wrap;padding:12px 16px;border-top:1px solid var(--b)}
+.g-li{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--t2)}
+.g-lc{width:12px;height:12px;border-radius:50%;flex-shrink:0}
+.g-ll{width:20px;height:2px;flex-shrink:0}
+.g-info{padding:10px 16px;background:var(--off);border-top:1px solid var(--b);font-size:11px;color:var(--t3);line-height:1.6}
+
+/* ═══ CYTOSCAPE MPM PAGE ═══ */
+#cy-container{width:100%;height:500px;background:var(--w);border-radius:var(--r3);overflow:hidden;border:1px solid var(--b)}
+.cy-controls{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;align-items:center}
+.cy-info{background:var(--off);border:1px solid var(--b);border-radius:var(--r);padding:12px 14px;font-size:12px;color:var(--t2);margin-top:10px}
+.cy-info b{color:var(--t);font-weight:600}
+
+/* ═══ ORDONNANCEMENT ═══ */
+.ord-wrap{max-width:100%}
+.ord-tbl{width:100%;border-collapse:collapse}
+.ord-tbl th{font-size:11px;font-weight:600;color:var(--t3);padding:10px 12px;border-bottom:1px solid var(--b);text-align:left;letter-spacing:.2px}
+.ord-row{transition:background .12s}
+.ord-row.dragging{opacity:.5;background:var(--off2)}
+.ord-row td{padding:10px 12px;border-bottom:1px solid var(--b);font-size:13px;color:var(--t2);vertical-align:middle}
+.ord-row:last-child td{border-bottom:none}
+.ord-row:hover td{background:var(--off)}
+.drag-handle{cursor:grab;color:var(--t3);padding:0 4px;font-size:15px}
+.drag-handle:active{cursor:grabbing}
+/* inline edit */
+.ie-wrap{display:flex;gap:5px;align-items:center;flex-wrap:wrap}
+.ie-input{background:var(--w);border:1px solid var(--b2);color:var(--t);padding:5px 8px;border-radius:var(--r2);font-size:12.5px;font-family:var(--fn);outline:none;transition:border .12s}
+.ie-input:focus{border-color:var(--t)}
+.ie-input.sm{width:60px}.ie-input.md{width:120px}.ie-input.lg{width:180px}
+
+/* ═══ INTERPRÉTATION ═══ */
+.interp-sel{display:flex;gap:10px;align-items:center;margin-bottom:20px;flex-wrap:wrap}
+.step-card{background:var(--w);border:1px solid var(--b);border-radius:var(--r3);margin-bottom:12px;overflow:hidden;box-shadow:var(--s)}
+.step-header{display:flex;align-items:center;gap:10px;padding:14px 18px;border-bottom:1px solid var(--b);background:var(--off)}
+.step-num{width:26px;height:26px;border-radius:50%;background:var(--t);color:#fff;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-family:var(--mn)}
+.step-num.cr{background:var(--pk)}
+.step-title{font-size:15px;font-weight:700;color:var(--t)}
+.step-body{padding:16px 18px}
+.formula-box{background:var(--off2);border:1px solid var(--b);border-radius:var(--r2);padding:12px 14px;font-family:var(--mn);font-size:12.5px;color:var(--t);margin:10px 0;line-height:1.8}
+.formula-box .hi{color:var(--pk);font-weight:500}
+.formula-box .gn{color:var(--gn);font-weight:500}
+.formula-box .am{color:var(--am);font-weight:500}
+.formula-box .bl{color:var(--bl);font-weight:500}
+.interp-note{font-size:12px;color:var(--t3);font-style:italic;margin-top:8px}
+.result-pill{display:inline-flex;align-items:center;gap:5px;padding:4px 12px;border-radius:20px;font-size:12px;font-weight:600;font-family:var(--mn)}
+.result-pill.cr{background:var(--pk-lt);color:var(--pk-tx);border:1px solid var(--pk-bd)}
+.result-pill.gn{background:var(--gn-lt);color:var(--gn);border:1px solid var(--gn-bd)}
+.result-pill.am{background:var(--am-lt);color:var(--am);border:1px solid var(--am-bd)}
+
+/* ═══ SIMULATION ═══ */
+.sim-card{background:var(--w);border:1px solid var(--b);border-radius:var(--r3);padding:20px;box-shadow:var(--s);margin-bottom:13px}
+.sim-top{display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+.sim-db{min-width:65px}
+.sim-dl{font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:1px;font-family:var(--mn);margin-bottom:3px}
+.sim-dv{font-size:24px;font-weight:700;color:var(--t);font-family:var(--mn);letter-spacing:-.5px}
+.sim-sl{flex:1;min-width:160px}
+.pbar{height:3px;background:var(--b);border-radius:2px;overflow:hidden;margin-top:4px}
+.pfill{height:100%;border-radius:2px;transition:width .3s ease;background:var(--t)}
+.pfill.rd{background:var(--pk)}.pfill.gn{background:var(--gn)}.pfill.am{background:var(--am)}
+input[type=range]{--webkit-appearance:none;width:100%;height:3px;background:var(--b2);border-radius:2px;outline:none;cursor:pointer}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border-radius:50%;background:var(--t);border:2px solid var(--w);box-shadow:0 0 0 2px var(--b2);cursor:pointer}
+.sim-tr{display:flex;align-items:center;gap:11px;padding:11px 0;border-bottom:1px solid var(--b)}
+.sim-tr:last-child{border-bottom:none}
+.sim-tid{width:44px;font-family:var(--mn);font-size:11px;font-weight:700;flex-shrink:0}
+.sim-tn{width:165px;font-size:12.5px;font-weight:500;color:var(--t);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex-shrink:0}
+.sim-tp{flex:1;min-width:70px}
+.sim-ts{font-size:10px;display:flex;justify-content:space-between;margin-bottom:3px;font-family:var(--mn)}
+.sim-tb{width:70px;text-align:right;flex-shrink:0}
+/* Fixed sim bar */
+.sim-fixed-bar{position:fixed;bottom:20px;right:22px;background:var(--w);border:1px solid var(--b2);border-radius:var(--r3);padding:12px 16px;box-shadow:var(--s2);z-index:500;min-width:240px;display:none}
+.sim-fixed-bar.visible{display:block}
+.sfb-title{font-size:10px;color:var(--t3);font-family:var(--mn);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center}
+.sfb-day{font-size:18px;font-weight:700;font-family:var(--mn);color:var(--t);margin-bottom:4px}
+
+/* ═══ MODAL ═══ */
+.mdbg{position:fixed;inset:0;background:rgba(0,0,0,.28);z-index:1000;display:none;align-items:center;justify-content:center;padding:14px;backdrop-filter:blur(2px)}
+.mdbg.on{display:flex}
+.md{background:var(--w);border-radius:var(--r4);width:100%;max-width:720px;max-height:92vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.14)}
+.md-h{padding:20px 24px 15px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--b);position:sticky;top:0;background:var(--w);z-index:1}
+.md-t{font-size:15px;font-weight:700;color:var(--t)}
+.md-b{padding:20px 24px}
+.md-f{padding:0 24px 20px;display:flex;justify-content:flex-end;gap:7px;margin-top:3px}
+
+/* ═══ PAGE CREATE — alignée sur le style de Programmation Linéaire ═══ */
+#pg-create{
+  --w:#fff; --off:#f8fafc; --off2:#f1f5f9;
+  --b:#e5e7eb; --b2:#cbd5e1; --b3:#94a3b8;
+  --t:#111827; --t2:#64748b; --t3:#94a3b8;
+  --pk:#ef4444; --pk-lt:#fef2f2; --pk-bd:#fecaca; --pk-tx:#dc2626;
+  --bl:#111827; --bl2:#000000; --bl-lt:#f1f5f9; --bl-bd:#cbd5e1;
+  background:var(--off);
+}
+#pg-create > .wrap{max-width:1000px;margin:0 auto}
+#pg-create .ni.on, #pg-create .itab.on, #pg-create .btn.pri{background:#111827;border-color:#111827}
+#pg-create .btn.pri:hover{background:#000}
+
+/* ═══ MISC ═══ */
+hr{border:none;border-top:1px solid var(--b);margin:14px 0}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:11px}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:11px}
+.s2{grid-column:span 2}.s3{grid-column:span 3}
+#toast{position:fixed;bottom:22px;right:22px;background:var(--t);color:#fff;padding:10px 16px;border-radius:var(--r);font-size:12.5px;font-weight:500;opacity:0;transform:translateY(6px);transition:all .2s;z-index:9999;pointer-events:none;display:flex;align-items:center;gap:8px;box-shadow:var(--s2)}
+#toast.on{opacity:1;transform:none}
+#toast.ok{background:#15803d}#toast.er{background:#b91c1c}
+::-webkit-scrollbar{width:4px;height:4px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--b2);border-radius:2px}
+</style>
+  </head>
+  <body>
+    <nav class="app-nav">
+      <button class="nav-ib" id="btn-home" onclick="window.location.href='index.html'" title="Accueil"><i class="bi bi-house"></i></button>
+      <button class="nav-ib" id="btn-back" onclick="goTo('home')" style="display:none" title="Retour"><i class="bi bi-arrow-left"></i></button>
+      <div>
+        <div class="nav-title" id="nav-title">PERT / CPM</div>
+        <div class="nav-sub" id="nav-sub">Planificateur</div>
+      </div>
+      
+      <div class="nav-right">
+        <button class="btn pri btn-sm" id="btn-calc" onclick="doCalc();renderTasks();renderOrd();renderCalcPage();toast('Calcul effectué','ok')" style="background:#111827;border-color:#111827" title="Lancer/relancer les calculs PERT/CPM"><i class="bi bi-calculator"></i> Calculer</button>
+        <button class="btn pri btn-sm" id="btn-new" onclick="openNewProj()"><i class="bi bi-plus-circle"></i> Nouveau</button>
+        <button class="btn gh btn-sm" id="btn-demo" onclick="loadExample()"><i class="bi bi-book-half"></i> Exemple</button>
+      </div>
+    </nav>
+    <div class="app">
+
+      <!-- ═══ SIDEBAR ═══ -->
+      <aside class="sb">
+        
+        <nav class="nav">
+          <div class="ngl">Navigation</div>
+            <div class="ni" id="nav-home" onclick="window.location.href='index.html'"><i
+              class="bi bi-house-door"></i>Accueil</div>
+          <div class="ni" id="nav-tasks" onclick="goTo('tasks')"><i
+              class="bi bi-list-task"></i>Tâches</div>
+          <div class="ni" id="nav-ord" onclick="goTo('ord')"><i
+              class="bi bi-arrow-down-up"></i>Ordonnancement</div>
+          <div class="ndiv"></div>
+          <div class="ngl">Analyse</div>
+          <div class="ni" id="nav-calculs" onclick="goTo('calculs')"><i
+              class="bi bi-calculator"></i>Calculs</div>
+          <div class="ni" id="nav-crit" onclick="goTo('crit')"><i
+              class="bi bi-diagram-2"></i>Chemin Critique</div>
+          <div class="ni" id="nav-graph" onclick="goTo('graph')"><i
+              class="bi bi-share"></i>Graphe PERT</div>
+          <div class="ni" id="nav-mpm" onclick="goTo('mpm')"><i
+              class="bi bi-diagram-3"></i>Réseau MPM</div>
+          <div class="ndiv"></div>
+          <div class="ni" id="nav-interp" onclick="goTo('interp')"><i
+              class="bi bi-lightbulb"></i>Interprétation</div>
+          <div class="ni" id="nav-sim" onclick="goTo('sim')"><i
+              class="bi bi-play-circle"></i>Simulation</div>
+        </nav>
+        <div class="sb-bot">
+          <div class="sb-pl">Projets récents</div>
+          <div id="sb-list"></div>
+        </div>
+      </aside>
+
+      <!-- ═══ MAIN ═══ -->
+      <main class="main">
+
+        <!-- HOME -->
+        <div class="pg" id="pg-home">
+          <div class="home-wrap">
+            <div class="home-title">PERT / CPM</div>
+            <div class="home-sub">Créez et gérez vos projets PERT/CPM</div>
+            <div class="net-cards">
+              <div class="net-card" onclick="loadExample()">
+                <div class="nc-icon ex"><i class="bi bi-book-half"></i></div>
+                <h3>Exemple du cours</h3>
+                <p>Accédez directement à l’exemple PERT/CPM avec navigation complète.</p>
+              </div>
+              <div class="net-card" onclick="openNewProj()">
+                <div class="nc-icon cu"><i class="bi bi-plus-circle"></i></div>
+                <h3>Nouveau projet</h3>
+                <p>Créer un projet en partant de zéro, en plein écran.</p>
+              </div>
+            </div>
+            <div class="saved-sec" id="saved-sec" style="display:none">
+              <div id="home-grid"></div>
+            </div>
+            
+          </div>
+        </div>
+
+        <!-- CREATE -->
+        <div class="pg" id="pg-create">
+          <div class="wrap">
+          <div class="ph">
+            <div class="ph-l"><div class="pt">Créer un nouveau projet</div><div class="ps">Ajoutez un projet PERT/CPM complet</div></div>
+            <div class="ph-r"><button class="btn btn-ghost btn-sm" onclick="goTo('home')"><i class="bi bi-arrow-left"></i> Retour</button></div>
+          </div>
+          <div class="card fl">
+            <div class="fc" style="margin-bottom:14px">
+              <div class="fc-t"><i class="bi bi-folder"></i> Informations</div>
+              <div class="g2" style="gap:11px">
+                <div class="fg s2"><div class="fl">Nom du projet <span>*</span></div><input id="np-n" placeholder="Ex : Construction Bâtiment B2"></div>
+                <div class="fg s2"><div class="fl">Description</div><textarea id="np-d" rows="2" placeholder="Description..."></textarea></div>
+                <div class="fg"><div class="fl">Date de début</div><input id="np-dt" type="date"></div>
+                <div class="fg"><div class="fl">Budget total (optionnel)</div><input id="np-budget" type="number" min="0" placeholder="Ex: 500000 (FCFA, €…)"></div>
+              </div>
+            </div>
+            <div class="fc">
+              <div class="fc-t"><i class="bi bi-list-task"></i> Tâches</div>
+              <div class="import-tabs">
+                <div class="itab on" id="itab-form" onclick="switchImportTab('form')"><i class="bi bi-ui-checks-grid"></i> Formulaire</div>
+                <div class="itab" id="itab-txt" onclick="switchImportTab('txt')"><i class="bi bi-code-slash"></i> Import rapide</div>
+              </div>
+              <div id="tab-form">
+                <div id="te-list"></div>
+                <button class="add-te" onclick="addTE()"><i class="bi bi-plus-lg"></i> Ajouter une tâche</button>
+              </div>
+              <div id="tab-txt" style="display:none">
+                <div class="import-box">
+                  <textarea id="import-txt" placeholder="Exemple :&#10;a = debut, 3, Analyse des besoins&#10;b = debut, 5, Conception&#10;c = debut, 2, Réunion&#10;d = a b, 4, Développement&#10;e = b, 3, Tests&#10;f = b c, 6, Intégration&#10;g = d e f, 2, Recette&#10;h = e c, 4, Documentation&#10;i = d e f, 5, Déploiement&#10;fin = g i h"></textarea>
+                  <div class="import-box-hint">
+                    <strong>Format :</strong> <code>id = predecesseurs, durée, description</code><br>
+                    Utilisez <code>debut</code> pour les tâches sans prédécesseur — pas besoin de créer début/fin, ils sont auto-détectés.<br>
+                    Prédécesseurs séparés par des espaces ou virgules. Durées décimales acceptées (ex: 0.5).
+                  </div>
+                  <button class="btn bl sm" style="margin-top:10px" onclick="parseImportTxt()"><i class="bi bi-arrow-right-circle"></i> Analyser et importer</button>
+                </div>
+                <div id="import-preview" style="display:none">
+                  <div class="ct" style="margin-bottom:8px"><i class="bi bi-eye"></i> Aperçu — tâches détectées</div>
+                  <div id="import-preview-list"></div>
+                </div>
+              </div>
+            </div>
+            <div class="md-f" style="padding:20px 24px 18px;display:flex;justify-content:flex-end;gap:7px">
+              <button class="btn" onclick="goTo('home')">Annuler</button>
+              <button class="btn pri" onclick="saveProj()"><i class="bi bi-check-lg"></i> Créer</button>
+            </div>
+          </div>
+          </div>
+        </div>
+
+        <!-- TASKS -->
+        <div class="pg" id="pg-tasks">
+          <div class="ph">
+            <div class="ph-l"><div class="pt">Tâches du Projet</div><div
+                class="ps" id="tasks-sub">—</div></div>
+            <div class="ph-r" id="tasks-ph-r">
+              <button class="btn pri" id="btn-add-task" onclick="openAddTask()"><i
+                  class="bi bi-plus-lg"></i> Ajouter une Tâche</button>
+            </div>
+          </div>
+          <!-- Resource toggle — optionnel -->
+          <div class="res-toggle-bar">
+            <div class="res-toggle-label">
+              <i class="bi bi-coin"></i> Gestion des Ressources & Budget
+              <span class="res-toggle-hint">(optionnel)</span>
+            </div>
+            <button class="toggle-sw" id="res-toggle"
+              onclick="toggleResources()"
+              title="Activer/désactiver le module ressources"></button>
+          </div>
+          <!-- Resource panel (visible si activé) -->
+          <div class="res-panel" id="res-panel">
+            <div class="res-kpi-row">
+              <div class="res-kpi"><div class="res-kpi-val"
+                  id="res-kpi-budget">—</div><div class="res-kpi-lbl">Budget
+                  total</div></div>
+              <div class="res-kpi"><div class="res-kpi-val"
+                  id="res-kpi-cost">0</div><div class="res-kpi-lbl">Coût total
+                  estimé</div></div>
+              <div class="res-kpi"><div class="res-kpi-val"
+                  id="res-kpi-remain">—</div><div class="res-kpi-lbl">Reste
+                  disponible</div></div>
+              <div class="res-kpi"><div class="res-kpi-val"
+                  id="res-kpi-pct">—</div><div class="res-kpi-lbl">Taux
+                  utilisation</div></div>
+            </div>
+            <div class="res-bar"><div class="res-bar-fill" id="res-bar-fill"
+                style="width:0%"></div></div>
+          </div>
+          <div class="card fl">
+            <div class="tw">
+              <table>
+                <thead><tr>
+                    <th style="width:20px;padding-left:16px"></th>
+                    <th>Nom de la Tâche</th>
+                    <th>Durée (j)</th>
+                    <th>Prédécesseurs</th>
+                    <th>Type</th>
+                    <th class="res-col" style="display:none">Coût estimé</th>
+                    <th class="res-col" style="display:none">Ressource</th>
+                    <th class="actions-col">Actions</th>
+                  </tr></thead>
+                <tbody id="tasks-tb"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- ORDONNANCEMENT -->
+        <div class="pg" id="pg-ord">
+          <div class="ph">
+            <div class="ph-l"><div class="pt">Ordonnancement</div><div
+                class="ps">Réorganisez les tâches par glisser-déposer et
+                modifiez-les en ligne</div></div>
+            <div class="ph-r" id="ord-ph-r">
+              <button class="btn pri" id="btn-add-task-ord" onclick="openAddTask()"><i
+                  class="bi bi-plus-lg"></i> Nouvelle tâche</button>
+            </div>
+          </div>
+          <div class="card fl" id="ord-card">
+            <div class="tw">
+              <table class="ord-tbl">
+                <thead><tr>
+                    <th style="width:30px"></th>
+                    <th>ID</th><th>Nom / Description</th><th>Durée (j)</th>
+                    <th>Prédécesseurs</th><th>Type</th><th class="actions-col-ord">Actions</th>
+                  </tr></thead>
+                <tbody id="ord-tb" ondragover="ordDragOver(event)"
+                  ondrop="ordDrop(event)"></tbody>
+              </table>
+            </div>
+          </div>
+          <div
+            style="font-size:11.5px;color:var(--t3);margin-top:10px;display:flex;align-items:center;gap:6px">
+            <i class="bi bi-info-circle"></i>
+            Glissez les lignes pour réordonner — cliquez sur <i
+              class="bi bi-pencil" style="font-size:11px;color:var(--t2)"></i>
+            pour modifier une tâche en ligne
+          </div>
+        </div>
+
+        <!-- CALCULS -->
+        <div class="pg" id="pg-calculs">
+          <div class="ph">
+            <div class="ph-l"><div class="pt">Calculs de Planning</div><div
+                class="ps">Résultats PERT/CPM — dates au plus tôt, au plus tard,
+                marges</div></div>
+            <div class="ph-r"></div>
+          </div>
+          <div id="calc-empty" class="card"
+            style="text-align:center;padding:50px">
+            <i class="bi bi-calculator"
+              style="font-size:32px;color:var(--b2);display:block;margin-bottom:12px"></i>
+            <div
+              style="font-size:13.5px;color:var(--t2);margin-bottom:5px">Aucun
+              calcul effectué</div>
+            <div
+              style="font-size:12px;color:var(--t3);margin-bottom:16px">Ajoutez
+              des tâches puis lancez les calculs</div>
+            <button class="btn pri" onclick="doCalc();renderCalcPage()"><i
+                class="bi bi-play-fill"></i> Lancer les calculs</button>
+          </div>
+          <div class="cg" id="calc-grid" style="display:none"></div>
+        </div>
+
+        <!-- CHEMIN CRITIQUE -->
+        <div class="pg" id="pg-crit">
+          <div class="ph"><div class="ph-l"><div class="pt">Analyse du Chemin
+                Critique</div><div class="ps">Tâches avec marge nulle qui
+                déterminent la durée totale</div></div></div>
+          <div class="cp-stats">
+            <div class="cp-s"><div class="cp-sl">Durée du Projet</div><div
+                class="cp-sv" id="cpv-dur">—</div></div>
+            <div class="cp-s"><div class="cp-sl">Tâches Critiques</div><div
+                class="cp-sv" id="cpv-nc">—</div></div>
+            <div class="cp-s"><div class="cp-sl">Total de Tâches</div><div
+                class="cp-sv" id="cpv-nt">—</div></div>
+          </div>
+          <div class="cpf-card">
+            <div class="cpf-l"><i class="bi bi-clock-history"></i> Chemin
+              Critique</div>
+            <div id="cpf-flow"></div>
+          </div>
+          <div class="card fl">
+            <div style="padding:16px 18px 8px"><div class="ct"><i
+                  class="bi bi-table"></i> Détails des Tâches
+                Critiques</div></div>
+            <div class="tw">
+              <table>
+                <thead><tr><th>Tâche</th><th>Durée</th><th>Début +
+                      tôt</th><th>Fin + tôt</th><th>Début + tard</th><th>Fin +
+                      tard</th><th>Marge</th></tr></thead>
+                <tbody id="cpt-body"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- GRAPHE PERT -->
+        <div class="pg" id="pg-graph">
+          <div class="ph">
+            <div class="ph-l"><div class="pt">Graphe PERT</div><div
+                class="ps">Diagramme réseau — nœuds avec DP / DT selon cours
+                M.Gaye UCAO</div></div>
+            <div class="ph-r">
+              <button class="btn sm" onclick="toggleCHL()"><i
+                  class="bi bi-eye"></i> <span id="chl-txt">Masquer
+                  critiques</span></button>
+              <button class="btn sm pri" onclick="drawPERT()"><i
+                  class="bi bi-arrow-clockwise"></i> Redessiner</button>
+            </div>
+          </div>
+          <div class="go">
+            <canvas id="pert-canvas" height="520"></canvas>
+            <div class="g-leg">
+              <div class="g-li"><div class="g-lc"
+                  style="background:var(--pk-lt);border:2px solid var(--pk)"></div>
+                Critique</div>
+              <div class="g-li"><div class="g-lc"
+                  style="background:var(--off2);border:2px solid var(--b2)"></div>
+                Normal</div>
+              <div class="g-li"><div class="g-lc"
+                  style="background:var(--off2);border:2px solid var(--b3)"></div>
+                α / ω</div>
+              <div class="g-li"><div class="g-ll"
+                  style="background:var(--pk)"></div> Arc critique</div>
+              <div class="g-li"><div class="g-ll"
+                  style="background:var(--b2)"></div> Arc normal</div>
+            </div>
+            <div class="g-info"><b>Notation PERT :</b> Nom & durée (haut) —
+              <span style="color:var(--gn)">DP (bas gauche)</span> — <span
+                style="color:var(--am)">DT (bas droit)</span> — α = début, ω =
+              fin du projet</div>
+          </div>
+        </div>
+
+        <!-- RÉSEAU MPM — CYTOSCAPE -->
+        <div class="pg" id="pg-mpm">
+          <div class="ph">
+            <div class="ph-l"><div class="pt">Réseau MPM —
+                Cytoscape.js</div><div class="ps">Graphe interactif — glissez
+                les nœuds, zoomez, cliquez pour les détails</div></div>
+            <div class="ph-r">
+              <button class="btn sm" onclick="cyLayout('breadthfirst')"><i
+                  class="bi bi-arrow-right"></i> Horizontal</button>
+              <button class="btn sm" onclick="cyLayout('dagre')"><i
+                  class="bi bi-grid"></i> Hiérarchique</button>
+              <button class="btn sm pri" onclick="initCy()"><i
+                  class="bi bi-arrow-clockwise"></i> Réinitialiser</button>
+            </div>
+          </div>
+          <div class="cy-controls">
+            <div class="bdg nr"><i class="bi bi-mouse"></i> Scroll = zoom</div>
+            <div class="bdg nr"><i class="bi bi-hand-index"></i> Clic nœud =
+              détails</div>
+            <div class="bdg nr"><i class="bi bi-arrows-move"></i> Drag =
+              déplacer</div>
+            <div id="cy-node-info" style="display:none" class="bdg am"><i
+                class="bi bi-info-circle"></i> <span
+                id="cy-info-txt">—</span></div>
+          </div>
+          <div id="cy-container"></div>
+          <div class="cy-info">
+            <b>À propos de Cytoscape.js :</b> bibliothèque JavaScript
+            open-source pour la visualisation et l'analyse de graphes. Elle
+            permet de représenter des réseaux MPM/PERT interactifs avec gestion
+            des dépendances, zoom et drag. Idéale pour l'intégration Laravel
+            Blade via CDN.
+          </div>
+        </div>
+
+        <!-- INTERPRÉTATION -->
+        <div class="pg" id="pg-interp">
+          <div class="ph"><div class="ph-l"><div class="pt">Interprétation des
+                Résultats</div><div class="ps">Choisissez une tâche pour
+                comprendre comment ses valeurs ont été
+                calculées</div></div></div>
+          <div class="card" style="margin-bottom:16px">
+            <div class="interp-sel">
+              <div
+                style="font-size:13px;font-weight:500;color:var(--t2)">Sélectionner
+                une tâche :</div>
+              <select id="interp-sel" style="width:280px;padding:8px 11px"
+                onchange="renderInterp(this.value)">
+                <option value>— choisissez une tâche —</option>
+              </select>
+            </div>
+          </div>
+          <div id="interp-content"></div>
+        </div>
+
+        <!-- SIMULATION -->
+        <div class="pg" id="pg-sim">
+          <div class="ph"><div class="ph-l"><div class="pt">Simulation</div><div
+                class="ps">Avancement du projet jour par jour — la barre
+                flottante reste visible partout</div></div></div>
+          <div class="sim-card">
+            <div class="sim-top">
+              <div class="sim-db"><div class="sim-dl">Jour</div><div
+                  class="sim-dv" id="sim-day">0</div></div>
+              <div class="sim-sl">
+                <input type="range" id="sim-slider" min="0" max="100" value="0"
+                  oninput="simUpdate(+this.value)">
+                <div
+                  style="display:flex;justify-content:space-between;font-size:10px;color:var(--t3);font-family:var(--mn);margin-top:3px">
+                  <span>0</span><span id="sim-max-l">—</span>
+                </div>
+              </div>
+              <div><div class="sim-dl">Total</div><div
+                  style="font-size:14px;font-weight:700;color:var(--t2);font-family:var(--mn)"
+                  id="sim-tdur">—</div></div>
+              <button class="btn pri" id="sim-play-btn" onclick="simToggle()"><i
+                  class="bi bi-play-fill" id="sim-pi"></i><span
+                  id="sim-pt">Démarrer</span></button>
+              <button class="btn rd" onclick="simReset()"><i
+                  class="bi bi-arrow-counterclockwise"></i> Recommencer</button>
+            </div>
+            <div style="margin-top:12px">
+              <div class="pbar"><div class="pfill" id="sim-fill"
+                  style="width:0%"></div></div>
+              <div
+                style="font-size:10px;color:var(--t3);font-family:var(--mn);margin-top:3px"
+                id="sim-pct">0%</div>
+            </div>
+          </div>
+          <div class="sim-card"><div class="ct"><i class="bi bi-list-check"></i>
+              Avancement par tâche</div><div id="sim-tlist"></div></div>
+        </div>
+
+      </main>
+    </div>
+
+    <!-- ═══ BARRE SIMULATION FIXE ═══ -->
+    <div class="sim-fixed-bar" id="sim-fixed-bar">
+      <div class="sfb-title">
+        <span><i class="bi bi-play-circle"></i> Simulation</span>
+        <span id="sfb-pct" style="font-family:var(--mn)">0%</span>
+      </div>
+      <div class="sfb-day" id="sfb-day">Jour 0</div>
+      <div class="pbar" style="height:4px"><div class="pfill" id="sfb-fill"
+          style="width:0%"></div></div>
+      <div
+        style="font-size:10px;color:var(--t3);font-family:var(--mn);margin-top:3px"
+        id="sfb-status">En attente</div>
+    </div>
+
+    <!-- ═══ MODAL NOUVEAU PROJET ═══ -->
+    <div class="mdbg" id="md-np">
+      <div class="md" style="max-width:680px">
+        <div class="md-h"><div class="md-t">Créer un nouveau projet</div><button
+            class="btn gh sm" onclick="closeMd('md-np')"><i
+              class="bi bi-x-lg"></i></button></div>
+        <div class="md-b">
+          <!-- Infos -->
+          <div class="fc" style="margin-bottom:14px">
+            <div class="fc-t"><i class="bi bi-folder"></i> Informations</div>
+            <div class="g2" style="gap:11px">
+              <div class="fg s2"><div class="fl">Nom du projet
+                  <span>*</span></div><input id="np-n"
+                  placeholder="Ex : Construction Bâtiment B2"></div>
+              <div class="fg s2"><div class="fl">Description</div><textarea
+                  id="np-d" rows="2"
+                  placeholder="Description..."></textarea></div>
+              <div class="fg"><div class="fl">Date de début</div><input
+                  id="np-dt" type="date"></div>
+              <div class="fg"><div class="fl">Budget total
+                  (optionnel)</div><input id="np-budget" type="number" min="0"
+                  placeholder="Ex: 500000 (FCFA, €…)"></div>
+            </div>
+          </div>
+          <!-- Tâches — tabs Formulaire / Import -->
+          <div class="fc">
+            <div class="fc-t"><i class="bi bi-list-task"></i> Tâches</div>
+            <div class="import-tabs">
+              <div class="itab on" id="itab-form"
+                onclick="switchImportTab('form')"><i
+                  class="bi bi-ui-checks-grid"></i> Formulaire</div>
+              <div class="itab" id="itab-txt"
+                onclick="switchImportTab('txt')"><i
+                  class="bi bi-code-slash"></i> Import rapide</div>
+            </div>
+            <!-- TAB FORM -->
+            <div id="tab-form">
+              <div id="te-list"></div>
+              <button class="add-te" onclick="addTE()"><i
+                  class="bi bi-plus-lg"></i> Ajouter une tâche</button>
+            </div>
+            <!-- TAB IMPORT TEXTE -->
+            <div id="tab-txt" style="display:none">
+              <div class="import-box">
+                <textarea id="import-txt"
+                  placeholder="Exemple :&#10;a = debut, 3, Analyse des besoins&#10;b = debut, 5, Conception&#10;c = debut, 2, Réunion&#10;d = a b, 4, Développement&#10;e = b, 3, Tests&#10;f = b c, 6, Intégration&#10;g = d e f, 2, Recette&#10;h = e c, 4, Documentation&#10;i = d e f, 5, Déploiement&#10;fin = g i h"></textarea>
+                <div class="import-box-hint">
+                  <strong>Format :</strong> <code>id = predecesseurs, durée,
+                    description</code><br>
+                  Utilisez <code>debut</code> pour les tâches sans prédécesseur
+                  — pas besoin de créer début/fin, ils sont auto-détectés.<br>
+                  Prédécesseurs séparés par des espaces ou virgules. Durées
+                  décimales acceptées (ex: 0.5).
+                </div>
+                <button class="btn bl sm" style="margin-top:10px"
+                  onclick="parseImportTxt()"><i
+                    class="bi bi-arrow-right-circle"></i> Analyser et
+                  importer</button>
+              </div>
+              <div id="import-preview" style="display:none">
+                <div class="ct" style="margin-bottom:8px"><i
+                    class="bi bi-eye"></i> Aperçu — tâches détectées</div>
+                <div id="import-preview-list"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="md-f"><button class="btn"
+            onclick="closeMd('md-np')">Annuler</button><button class="btn pri"
+            onclick="saveProj()"><i class="bi bi-check-lg"></i>
+            Créer</button></div>
+      </div>
+    </div>
+
+    <!-- ═══ MODAL AJOUTER TÂCHE ═══ -->
+    <div class="mdbg" id="md-at">
+      <div class="md" style="max-width:520px">
+        <div class="md-h"><div class="md-t">Ajouter une tâche</div><button
+            class="btn gh sm" onclick="closeMd('md-at')"><i
+              class="bi bi-x-lg"></i></button></div>
+        <div class="md-b">
+          <div class="g2" style="gap:11px">
+            <div class="fg"><div class="fl">ID <span>*</span></div><input
+                id="at-id" placeholder="Ex : A, B, T1"></div>
+            <div class="fg"><div class="fl">Durée (jours)
+                <span>*</span></div><input id="at-d" type="number" min="0.5"
+                step="0.5" placeholder="5"></div>
+            <div class="fg s2"><div class="fl">Nom / Description
+                <span>*</span></div><input id="at-n"
+                placeholder="Ex : Achat de matériel"></div>
+            <div class="fg s2">
+              <div class="fl">Prédécesseurs (antécédents)</div>
+              <select id="at-p" multiple></select>
+              <div class="fhint">Ctrl+clic pour sélection multiple</div>
+            </div>
+            <div class="fg res-field" style="display:none"><div class="fl"><i
+                  class="bi bi-coin" style="font-size:11px"></i> Coût
+                estimé</div><input id="at-cost" type="number" min="0"
+                placeholder="0"></div>
+            <div class="fg res-field" style="display:none"><div class="fl"><i
+                  class="bi bi-person" style="font-size:11px"></i> Ressource
+                responsable</div><input id="at-res"
+                placeholder="Ex: Équipe A, Jean D."></div>
+          </div>
+        </div>
+        <div class="md-f"><button class="btn"
+            onclick="closeMd('md-at')">Annuler</button><button class="btn pri"
+            onclick="submitAT()"><i class="bi bi-check-lg"></i>
+            Ajouter</button></div>
+      </div>
+    </div>
+
+    <!-- ═══ MODAL MODIFIER TÂCHE ═══ -->
+    <div class="mdbg" id="md-edit">
+      <div class="md" style="max-width:520px">
+        <div class="md-h"><div class="md-t">Modifier la tâche</div><button
+            class="btn gh sm" onclick="closeMd('md-edit')"><i
+              class="bi bi-x-lg"></i></button></div>
+        <div class="md-b">
+          <div class="g2" style="gap:11px">
+            <div class="fg"><div class="fl">ID</div><input id="ed-id" readonly
+                style="opacity:.6"></div>
+            <div class="fg"><div class="fl">Durée (jours)
+                <span>*</span></div><input id="ed-d" type="number" min="0.5"
+                step="0.5"></div>
+            <div class="fg s2"><div class="fl">Nom / Description
+                <span>*</span></div><input id="ed-n"></div>
+            <div class="fg s2">
+              <div class="fl">Prédécesseurs</div>
+              <select id="ed-p" multiple></select>
+              <div class="fhint">Ctrl+clic pour sélection multiple</div>
+            </div>
+            <div class="fg res-field" style="display:none"><div class="fl"><i
+                  class="bi bi-coin" style="font-size:11px"></i> Coût
+                estimé</div><input id="ed-cost" type="number" min="0"
+                placeholder="0"></div>
+            <div class="fg res-field" style="display:none"><div class="fl"><i
+                  class="bi bi-person" style="font-size:11px"></i> Ressource
+                responsable</div><input id="ed-res"
+                placeholder="Ex: Équipe A"></div>
+          </div>
+        </div>
+        <div class="md-f"><button class="btn"
+            onclick="closeMd('md-edit')">Annuler</button><button class="btn pri"
+            onclick="submitEdit()"><i class="bi bi-check-lg"></i>
+            Enregistrer</button></div>
+      </div>
+    </div>
+
+    <div id="toast"></div>
+
+    <script>
+// ═══════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════
+let projs=[],curId=null,teIdx=0,critHL=true,simInt=null,simPlaying=false,cyInst=null;
+let resEnabled=false; // module ressources optionnel
+const sv=()=>{try{localStorage.setItem('pert_v4',JSON.stringify(projs))}catch(e){}};
+const ld=()=>{try{const d=localStorage.getItem('pert_v4');if(d)projs=JSON.parse(d)}catch(e){projs=[]}};
+const cur=()=>projs.find(p=>p.id===curId)||null;
+
+// ═══════════════════════════════════════════════
+// ROUTING
+// ═══════════════════════════════════════════════
+const PAGES=['home','create','tasks','ord','calculs','crit','graph','mpm','interp','sim'];
+function goTo(p){
+  PAGES.forEach(x=>{
+    document.getElementById('pg-'+x).classList.remove('on');
+    const n=document.getElementById('nav-'+x);if(n)n.classList.remove('on');
+  });
+  document.getElementById('pg-'+p).classList.add('on');
+  const n=document.getElementById('nav-'+p);if(n)n.classList.add('on');
+  const aside=document.querySelector('.sb');
+  if(aside){aside.style.display=(p==='home'||p==='create')?'none':'flex';}
+  const btnBack=document.getElementById('btn-back');
+  const btnNew=document.getElementById('btn-new');
+  const btnDemo=document.getElementById('btn-demo');
+  const navTitle=document.getElementById('nav-title');
+  const navSub=document.getElementById('nav-sub');
+  if(btnBack)btnBack.style.display=(p==='home'?'none':'flex');
+  if(btnNew)btnNew.style.display=(p==='home'?'inline-flex':'none');
+  if(btnDemo)btnDemo.style.display=(p==='home'?'inline-flex':'none');
+  if(navTitle)navTitle.textContent = p==='home' ? 'PERT / CPM' : p==='create' ? 'Créer un nouveau projet' : p==='tasks' ? 'Tâches du projet' : p==='ord' ? 'Ordonnancement' : p==='calculs' ? 'Calculs PERT' : p==='crit' ? 'Chemin Critique' : p==='graph' ? 'Graphe PERT' : p==='mpm' ? 'Réseau MPM' : p==='interp' ? 'Interprétation' : p==='sim' ? 'Simulation' : 'PERT / CPM';
+  if(navSub)navSub.textContent = p==='home' ? 'Planificateur de Projet' : p==='create' ? 'Ajoutez un projet PERT/CPM complet' : p==='tasks' ? 'Gérez les tâches de votre projet' : p==='ord' ? 'Réorganisez les tâches par priorités' : p==='calculs' ? 'Dates au plus tôt, au plus tard, marges' : p==='crit' ? 'Analyse des tâches critiques' : p==='graph' ? 'Visualisez le réseau PERT' : p==='mpm' ? 'Réseau MPM interactif' : p==='interp' ? 'Explications des résultats' : p==='sim' ? 'Suivi d’avancement jour par jour' : '';
+  // Show/hide fixed sim bar
+  const sfb=document.getElementById('sim-fixed-bar');
+  const proj=cur();
+  if(sfb){
+    sfb.className='sim-fixed-bar'+(p==='sim'&&proj&&proj.calcDone?' visible':'');
+    sfb.style.display=(p==='sim'&&proj&&proj.calcDone)?'block':'none';
+  }
+
+  if(p==='home')renderHome();
+  if(p==='create')initNewProjectPage();
+  if(p==='tasks')renderTasks();
+  if(p==='ord')renderOrd();
+  if(p==='calculs')renderCalcPage();
+  if(p==='crit')renderCrit();
+  if(p==='graph')setTimeout(drawPERT,60);
+  if(p==='mpm')setTimeout(initCy,80);
+  if(p==='interp')renderInterpSel();
+  if(p==='sim')renderSimPage();
+}
+
+// ═══════════════════════════════════════════════
+// PERT ALGORITHM (M.Gaye UCAO — formules p.28)
+// ═══════════════════════════════════════════════
+function topoSort(tasks){
+  const map={};tasks.forEach(t=>map[t.id]=t);
+  const vis=new Set(),sorted=[];
+  function visit(t){if(vis.has(t.id))return;vis.add(t.id);(t.preds||[]).forEach(p=>{if(map[p])visit(map[p])});sorted.push(t);}
+  tasks.forEach(t=>visit(t));
+  return sorted;
+}
+
+function pertCalc(tasks){
+  if(!tasks||!tasks.length)return{sorted:[],map:{},dur:0};
+  const sorted=topoSort(tasks);
+  const M={};sorted.forEach(t=>M[t.id]={...t,dur:parseFloat(t.dur)||0,early:0,late:0,margin:0,critical:false});
+
+  // PASS AVANT : early_j = max(early_i + dur_i) ∀ prédécesseurs i
+  sorted.forEach(t=>{
+    M[t.id].early=t.preds.length===0?0:Math.max(...t.preds.map(p=>M[p]?(M[p].early+M[p].dur):0));
+  });
+
+  // Durée projet = max(early + dur) sur toutes les tâches sans successeur
+  const allIds=new Set(sorted.map(t=>t.id));
+  const predSet=new Set(sorted.flatMap(t=>t.preds));
+  const endIds=[...allIds].filter(id=>!predSet.has(id));
+  const dur=Math.max(...endIds.map(id=>M[id].early+M[id].dur));
+
+  // PASS ARRIÈRE : late_i = min(late_j) - dur_i ∀ successeurs j
+  endIds.forEach(id=>{M[id].late=dur-M[id].dur;});
+  [...sorted].reverse().forEach(t=>{
+    const succs=sorted.filter(s=>(s.preds||[]).includes(t.id));
+    if(succs.length)M[t.id].late=Math.min(...succs.map(s=>M[s.id].late))-M[t.id].dur;
+  });
+
+  // MARGES
+  sorted.forEach(t=>{
+    M[t.id].margin=Math.round((M[t.id].late-M[t.id].early)*100)/100;
+    M[t.id].critical=(Math.abs(M[t.id].margin)<0.001);
+  });
+  return{sorted,map:M,dur};
+}
+
+function doCalc(){
+  const p=cur();if(!p){toast('Sélectionnez un projet','er');return;}
+  if(!p.tasks.length){toast('Aucune tâche','er');return;}
+  const{sorted,map,dur}=pertCalc(p.tasks);
+  p.tasks.forEach(t=>{const c=map[t.id];if(c){t.early=c.early;t.late=c.late;t.margin=c.margin;t.critical=c.critical;}});
+  p.calcDone=true;p.dur=dur;sv();
+  toast('Calculs PERT terminés','ok');
+}
+
+// ═══════════════════════════════════════════════
+// PROJECTS
+// ═══════════════════════════════════════════════
+function openNewProj(){
+  teIdx=0;
+  document.getElementById('np-n').value='';
+  document.getElementById('np-d').value='';
+  document.getElementById('np-dt').value=new Date().toISOString().split('T')[0];
+  document.getElementById('np-budget').value='';
+  document.getElementById('te-list').innerHTML='';
+  document.getElementById('import-txt').value='';
+  document.getElementById('import-preview').style.display='none';
+  switchImportTab('form');
+  addTE();addTE();addTE();
+  goTo('create');
+  setTimeout(()=>document.getElementById('np-n').focus(),120);
+}
+
+function initNewProjectPage(){
+  document.getElementById('np-n').value='';
+  document.getElementById('np-d').value='';
+  document.getElementById('np-dt').value=new Date().toISOString().split('T')[0];
+  document.getElementById('np-budget').value='';
+  document.getElementById('te-list').innerHTML='';
+  document.getElementById('import-txt').value='';
+  document.getElementById('import-preview').style.display='none';
+  switchImportTab('form');
+  teIdx=0; addTE(); addTE(); addTE();
+}
+
+// ── Import tab switching ──
+function switchImportTab(tab){
+  document.getElementById('itab-form').classList.toggle('on',tab==='form');
+  document.getElementById('itab-txt').classList.toggle('on',tab==='txt');
+  document.getElementById('tab-form').style.display=tab==='form'?'':'none';
+  document.getElementById('tab-txt').style.display=tab==='txt'?'':'none';
+}
+
+// ── Parse import texte : "id = preds, durée, description" ──
+// Accepte aussi "debut" comme mot-clé pour tâche sans prédécesseur
+// début/fin sont auto-détectés : pas besoin de les créer manuellement
+function parseImportTxt(){
+  const raw=document.getElementById('import-txt').value.trim();
+  if(!raw){toast('Zone de texte vide','er');return;}
+
+  const tasks=[];const errors=[];
+  const lines=raw.split('\n').map(l=>l.trim()).filter(Boolean);
+
+  lines.forEach((line,li)=>{
+    // Format: id = predecesseurs, durée, description
+    // ou    : id = predecesseurs (durée et description optionnels)
+    const eqIdx=line.indexOf('=');
+    if(eqIdx<0){errors.push(`Ligne ${li+1} : pas de "=" trouvé`);return;}
+
+    const idRaw=line.slice(0,eqIdx).trim().toUpperCase();
+    const rest=line.slice(eqIdx+1).trim();
+
+    // Séparer par virgule : [preds, durée, description]
+    const parts=rest.split(',').map(s=>s.trim());
+    const predStr=parts[0]||'';
+    const durStr=parts[1]||'1';
+    const desc=parts.slice(2).join(',').trim()||idRaw;
+
+    // Preds : espace ou virgule, "debut" = aucun prédécesseur
+    const predRaw=predStr.split(/[\s,]+/).map(s=>s.trim().toUpperCase()).filter(s=>s&&s!=='DEBUT'&&s!=='DÉBUT'&&s!=='FIN'&&s!=='FIN');
+    const dur=parseFloat(durStr)||1;
+
+    if(!idRaw){errors.push(`Ligne ${li+1} : ID vide`);return;}
+    // Ignorer les lignes qui définissent "debut" ou "fin" explicitement
+    if(['DEBUT','DÉBUT','FIN'].includes(idRaw))return;
+
+    tasks.push({id:idRaw,preds:predRaw,dur,desc});
+  });
+
+  if(errors.length){toast(errors[0],'er');return;}
+  if(!tasks.length){toast('Aucune tâche détectée','er');return;}
+
+  // Afficher aperçu
+  const prev=document.getElementById('import-preview');
+  const list=document.getElementById('import-preview-list');
+  list.innerHTML=tasks.map(t=>`
+    <div style="display:flex;align-items:center;gap:10px;padding:7px 10px;background:var(--w);border:1px solid var(--b);border-radius:var(--r2);margin-bottom:5px;font-size:12.5px">
+      <b style="font-family:var(--mn);color:var(--bl);min-width:28px">${t.id}</b>
+      <span style="color:var(--t2)">${t.desc}</span>
+      <span style="color:var(--t3);font-family:var(--mn);margin-left:auto">${t.dur}j</span>
+      <span style="color:var(--t3);font-size:11px">${t.preds.length?'← '+t.preds.join(', '):'début'}</span>
+    </div>`).join('');
+  prev.style.display='block';
+
+  // Stocker pour saveProj
+  window._importedTasks=tasks;
+  toast(`${tasks.length} tâche(s) détectée(s) — cliquez "Créer"`, 'ok');
+}
+function addTE(){
+  teIdx++;const idx=teIdx;
+  const el=document.createElement('div');el.className='te';el.id='te-'+idx;
+  el.innerHTML=`
+    <div class="te-h">
+      <div class="te-l"><i class="bi bi-grip-vertical"></i> Tâche ${idx}</div>
+      <button class="btn gh sm" onclick="document.getElementById('te-${idx}').remove();refreshPreds()"><i class="bi bi-trash3"></i></button>
+    </div>
+    <div class="g3" style="gap:9px">
+      <div class="fg"><div class="fl">ID <span>*</span></div><input class="te-id" placeholder="Ex: A" oninput="refreshPreds()"></div>
+      <div class="fg"><div class="fl">Durée (j) <span>*</span></div><input class="te-dur" type="number" min="1" placeholder="5"></div>
+      <div class="fg"><div class="fl">Antécédents</div><select class="te-pr" multiple style="min-height:56px"></select></div>
+      <div class="fg s3"><div class="fl">Description <span>*</span></div><input class="te-nm" placeholder="Ex: Achat de matériel"></div>
+    </div>`;
+  document.getElementById('te-list').appendChild(el);refreshPreds();
+}
+function getEntryIds(){return[...document.querySelectorAll('.te-id')].map(i=>i.value.trim().toUpperCase()).filter(Boolean);}
+function refreshPreds(){
+  const allIds=getEntryIds();
+  document.querySelectorAll('.te').forEach(te=>{
+    const idEl=te.querySelector('.te-id'),sel=te.querySelector('.te-pr');if(!sel)return;
+    const sel2=[...sel.selectedOptions].map(o=>o.value);
+    const myId=idEl?idEl.value.trim().toUpperCase():'';
+    sel.innerHTML=allIds.filter(id=>id&&id!==myId).map(id=>`<option value="${id}" ${sel2.includes(id)?'selected':''}>${id}</option>`).join('');
+  });
+}
+function saveProj(){
+  const name=document.getElementById('np-n').value.trim();
+  if(!name){toast('Nom requis','er');return;}
+  const budget=parseFloat(document.getElementById('np-budget').value)||null;
+
+  let tasks=[];const usedIds=new Set();
+  const activeTab=document.getElementById('itab-txt').classList.contains('on')?'txt':'form';
+
+  if(activeTab==='txt'){
+    // Import texte
+    if(!window._importedTasks||!window._importedTasks.length){toast('Parsez d\'abord le texte via "Analyser"','er');return;}
+    window._importedTasks.forEach(t=>{
+      if(usedIds.has(t.id)){toast(`ID "${t.id}" en double`,'er');return;}
+      usedIds.add(t.id);
+      tasks.push({id:t.id,name:t.desc,dur:t.dur,preds:t.preds,cost:null,resource:'',early:null,late:null,margin:null,critical:false});
+    });
+  } else {
+    // Formulaire standard
+    for(const el of document.querySelectorAll('.te')){
+      const id=el.querySelector('.te-id')?.value.trim().toUpperCase();
+      const nm=el.querySelector('.te-nm')?.value.trim();
+      const dur=parseFloat(el.querySelector('.te-dur')?.value);
+      const preds=[...el.querySelector('.te-pr').selectedOptions].map(o=>o.value);
+      if(!id||!nm||!dur||dur<=0)continue;
+      if(usedIds.has(id)){toast(`ID "${id}" en double`,'er');continue;}
+      usedIds.add(id);
+      tasks.push({id,name:nm,dur,preds,cost:null,resource:'',early:null,late:null,margin:null,critical:false});
+    }
+  }
+
+  const p={id:'p'+Date.now(),name,desc:document.getElementById('np-d').value.trim(),date:document.getElementById('np-dt').value,budget,tasks,calcDone:false,dur:0,created:Date.now()};
+  projs.push(p);curId=p.id;
+  if(tasks.length){const r=pertCalc(tasks);tasks.forEach(t=>{const c=r.map[t.id];if(c){t.early=c.early;t.late=c.late;t.margin=c.margin;t.critical=c.critical;}});p.calcDone=true;p.dur=r.dur;}
+  sv();closeMd('md-np');window._importedTasks=null;
+  renderSidebar();goTo('tasks');toast(`Projet "${name}" créé`,'ok');
+}
+function loadExample(){
+  let demo=projs.find(p=>p.id==='p_demo');
+  if(!demo){
+    loadDemo();
+    demo=projs.find(p=>p.id==='p_demo');
+    if(!demo){toast('Impossible de charger l’exemple','er');return;}
+  }
+  curId=demo.id;
+  renderSidebar();
+  goTo('tasks');
+  toast('Exemple du cours chargé','ok');
+}
+function selectProj(id){curId=id;renderSidebar();goTo('tasks');}
+
+// ═══════════════════════════════════════════════
+// TASKS
+// ═══════════════════════════════════════════════
+function openAddTask(){
+  const p=cur();if(!p)return;
+  if(p.id==='p_demo'){toast('L\'exemple du cours ne peut pas être modifié','er');return;}
+  document.getElementById('at-id').value='';document.getElementById('at-n').value='';document.getElementById('at-d').value='';
+  const sel=document.getElementById('at-p');
+  sel.innerHTML=p.tasks.map(t=>`<option value="${t.id}">${t.id} — ${t.name}</option>`).join('');
+  openMd('md-at');setTimeout(()=>document.getElementById('at-id').focus(),120);
+}
+function submitAT(){
+  const p=cur();if(!p)return;
+  const id=document.getElementById('at-id').value.trim().toUpperCase();
+  const nm=document.getElementById('at-n').value.trim();
+  const dur=parseFloat(document.getElementById('at-d').value);
+  const preds=[...document.getElementById('at-p').selectedOptions].map(o=>o.value);
+  const cost=parseFloat(document.getElementById('at-cost').value)||null;
+  const resource=document.getElementById('at-res').value.trim()||'';
+  if(!id){toast('ID requis','er');return;}if(!nm){toast('Nom requis','er');return;}
+  if(!dur||dur<=0){toast('Durée invalide','er');return;}
+  if(p.tasks.find(t=>t.id===id)){toast(`ID "${id}" déjà utilisé`,'er');return;}
+  p.tasks.push({id,name:nm,dur,preds,cost,resource,early:null,late:null,margin:null,critical:false});
+  if(p.tasks.length>1){const r=pertCalc(p.tasks);p.tasks.forEach(t=>{const c=r.map[t.id];if(c){t.early=c.early;t.late=c.late;t.margin=c.margin;t.critical=c.critical;}});p.calcDone=true;p.dur=r.dur;}
+  sv();closeMd('md-at');renderTasks();renderOrd();toast(`Tâche ${id} ajoutée`,'ok');
+}
+function delTask(id){
+  const p=cur();if(!p)return;
+  if(p.id==='p_demo'){toast('L\'exemple du cours ne peut pas être modifié','er');return;}
+  if(!confirm(`Supprimer la tâche "${id}" ?`))return;
+  p.tasks=p.tasks.filter(t=>t.id!==id);
+  p.tasks.forEach(t=>{t.preds=t.preds.filter(pr=>pr!==id)});
+  if(p.tasks.length){const r=pertCalc(p.tasks);p.tasks.forEach(t=>{const c=r.map[t.id];if(c){t.early=c.early;t.late=c.late;t.margin=c.margin;t.critical=c.critical;}});p.calcDone=true;p.dur=r.dur;}
+  else{p.calcDone=false;p.dur=0;}
+  sv();renderTasks();renderOrd();toast(`Tâche ${id} supprimée`);
+}
+
+let editingId=null;
+function openEdit(id){
+  const p=cur();if(!p)return;
+  if(p.id==='p_demo'){toast('L\'exemple du cours ne peut pas être modifié','er');return;}
+  const t=p.tasks.find(x=>x.id===id);if(!t)return;
+  editingId=id;
+  document.getElementById('ed-id').value=t.id;
+  document.getElementById('ed-n').value=t.name;
+  document.getElementById('ed-d').value=t.dur;
+  document.getElementById('ed-cost').value=t.cost||'';
+  document.getElementById('ed-res').value=t.resource||'';
+  const sel=document.getElementById('ed-p');
+  sel.innerHTML=p.tasks.filter(x=>x.id!==id).map(x=>`<option value="${x.id}" ${t.preds.includes(x.id)?'selected':''}>${x.id} — ${x.name}</option>`).join('');
+  openMd('md-edit');
+}
+function submitEdit(){
+  const p=cur();if(!p||!editingId)return;
+  const t=p.tasks.find(x=>x.id===editingId);if(!t)return;
+  const nm=document.getElementById('ed-n').value.trim();
+  const dur=parseFloat(document.getElementById('ed-d').value);
+  const preds=[...document.getElementById('ed-p').selectedOptions].map(o=>o.value);
+  const cost=parseFloat(document.getElementById('ed-cost').value)||null;
+  const resource=document.getElementById('ed-res').value.trim()||'';
+  if(!nm){toast('Nom requis','er');return;}
+  if(!dur||dur<=0){toast('Durée invalide','er');return;}
+  t.name=nm;t.dur=dur;t.preds=preds;t.cost=cost;t.resource=resource;
+  const r=pertCalc(p.tasks);p.tasks.forEach(t2=>{const c=r.map[t2.id];if(c){t2.early=c.early;t2.late=c.late;t2.margin=c.margin;t2.critical=c.critical;}});
+  p.calcDone=true;p.dur=r.dur;
+  sv();closeMd('md-edit');renderTasks();renderOrd();toast(`Tâche ${editingId} modifiée`,'ok');
+}
+
+function renderTasks(){
+  const p=cur();document.getElementById('tasks-sub').textContent=p?`Projet : ${p.name}`:'—';
+  const isDemo=p&&p.id==='p_demo';
+  const addBtn=document.getElementById('btn-add-task');
+  if(addBtn)addBtn.style.display=isDemo?'none':'';
+  document.querySelectorAll('#pg-tasks th.actions-col').forEach(el=>el.style.display=isDemo?'none':'');
+  const tb=document.getElementById('tasks-tb');
+  if(!p||!p.tasks.length){
+    tb.innerHTML=`<tr><td colspan="8" style="text-align:center;padding:45px;color:var(--t3)"><i class="bi bi-inbox" style="font-size:24px;display:block;margin-bottom:7px"></i>Aucune tâche</td></tr>`;
+    updateResourcePanel();return;
+  }
+  tb.innerHTML=p.tasks.map(t=>`<tr>
+    <td style="padding-left:16px"><span class="dot ${t.critical?'cr':'nr'}"></span></td>
+    <td class="st">${t.name}</td>
+    <td>${t.dur}${t.dur%1!==0?'j':'j'}</td>
+    <td>${t.preds.length?t.preds.map(pr=>`<span class="bdg nr" style="margin-right:3px">${pr}</span>`).join(''):'<span style="color:var(--t3)">—</span>'}</td>
+    <td>${p.calcDone?`<span class="bdg ${t.critical?'cr':'nr'}">${t.critical?'Critique':'Non-critique'}</span>`:'<span style="color:var(--t3);font-size:11px">—</span>'}</td>
+    <td class="res-col" style="display:${resEnabled?'':'none'};font-family:var(--mn);font-size:12px;color:var(--bl)">${t.cost!=null?fmtCost(t.cost):'<span style="color:var(--t3)">—</span>'}</td>
+    <td class="res-col" style="display:${resEnabled?'':'none'};font-size:12px;color:var(--t2)">${t.resource||'<span style="color:var(--t3)">—</span>'}</td>
+    ${isDemo?'':`<td>
+      <div style="display:flex;gap:5px">
+        <button class="btn xs bl" onclick="openEdit('${t.id}')"><i class="bi bi-pencil"></i></button>
+        <button class="btn xs rd" onclick="delTask('${t.id}')"><i class="bi bi-trash3"></i></button>
+      </div>
+    </td>`}
+  </tr>`).join('');
+  updateResourcePanel();
+}
+
+// ═══════════════════════════════════════════════
+// RESSOURCES & BUDGET (module optionnel)
+// ═══════════════════════════════════════════════
+function fmtCost(v){
+  if(v==null)return'—';
+  return v>=1000?v.toLocaleString('fr-FR'):String(v);
+}
+
+function toggleResources(){
+  resEnabled=!resEnabled;
+  const sw=document.getElementById('res-toggle');
+  sw.classList.toggle('on',resEnabled);
+  // Afficher/masquer le panel et les colonnes
+  document.getElementById('res-panel').classList.toggle('visible',resEnabled);
+  document.querySelectorAll('.res-col').forEach(el=>el.style.display=resEnabled?'':'none');
+  document.querySelectorAll('.res-field').forEach(el=>el.style.display=resEnabled?'':'none');
+  if(resEnabled)updateResourcePanel();
+}
+
+function updateResourcePanel(){
+  if(!resEnabled)return;
+  const p=cur();
+  const totalCost=p?p.tasks.reduce((s,t)=>s+(t.cost||0),0):0;
+  const budget=p?.budget||null;
+  const remain=budget!=null?budget-totalCost:null;
+  const pct=budget&&budget>0?Math.min(100,(totalCost/budget*100)).toFixed(1):null;
+
+  document.getElementById('res-kpi-budget').textContent=budget!=null?fmtCost(budget)+'':' — ';
+  document.getElementById('res-kpi-cost').textContent=fmtCost(totalCost);
+  document.getElementById('res-kpi-remain').textContent=remain!=null?(remain>=0?'+':'')+fmtCost(remain):'—';
+  document.getElementById('res-kpi-pct').textContent=pct!=null?pct+'%':'—';
+
+  const over=budget!=null&&totalCost>budget;
+  document.getElementById('res-kpi-cost').classList.toggle('over',over);
+  document.getElementById('res-kpi-remain').classList.toggle('over',over);
+  document.getElementById('res-kpi-pct').classList.toggle('over',over);
+
+  const fill=document.getElementById('res-bar-fill');
+  fill.style.width=(pct!=null?Math.min(100,parseFloat(pct)):0)+'%';
+  fill.classList.toggle('over',over);
+}
+let dragSrcId=null;
+function renderOrd(){
+  const p=cur();const tb=document.getElementById('ord-tb');
+  const isDemo=p&&p.id==='p_demo';
+  const addBtnOrd=document.getElementById('btn-add-task-ord');
+  if(addBtnOrd)addBtnOrd.style.display=isDemo?'none':'';
+  document.querySelectorAll('.actions-col-ord').forEach(el=>el.style.display=isDemo?'none':'');
+  if(!p||!p.tasks.length){
+    tb.innerHTML=`<tr><td colspan="7" style="text-align:center;padding:40px;color:var(--t3)"><i class="bi bi-inbox" style="font-size:22px;display:block;margin-bottom:7px"></i>Aucune tâche</td></tr>`;return;
+  }
+  tb.innerHTML=p.tasks.map((t,i)=>`
+    <tr class="ord-row" draggable="${!isDemo}" data-id="${t.id}"
+        ondragstart="ordDragStart(event,'${t.id}')"
+        ondragover="ordDragOver(event)"
+        ondrop="ordDrop(event,'${t.id}')"
+        ondragend="ordDragEnd(event)">
+      <td><span class="drag-handle"><i class="bi bi-grip-vertical"></i></span></td>
+      <td><b style="font-family:var(--mn);font-size:12px">${t.id}</b></td>
+      <td class="st">${t.name}</td>
+      <td style="font-family:var(--mn)">${t.dur}j</td>
+      <td>${t.preds.length?t.preds.map(pr=>`<span class="bdg nr" style="margin-right:3px">${pr}</span>`).join(''):'<span style="color:var(--t3)">—</span>'}</td>
+      <td>${p.calcDone?`<span class="bdg ${t.critical?'cr':'nr'}">${t.critical?'Critique':'Non-critique'}</span>`:'<span style="color:var(--t3);font-size:11px">—</span>'}</td>
+      ${isDemo?'':`<td>
+        <div style="display:flex;gap:5px">
+          <button class="btn xs bl" onclick="openEdit('${t.id}')"><i class="bi bi-pencil"></i> Modifier</button>
+          <button class="btn xs rd" onclick="delTask('${t.id}')"><i class="bi bi-trash3"></i></button>
+        </div>
+      </td>`}
+    </tr>`).join('');
+}
+function ordDragStart(e,id){dragSrcId=id;e.currentTarget.classList.add('dragging');e.dataTransfer.effectAllowed='move';}
+function ordDragOver(e){e.preventDefault();e.dataTransfer.dropEffect='move';}
+function ordDrop(e,targetId){
+  e.preventDefault();if(!dragSrcId||dragSrcId===targetId)return;
+  const p=cur();if(!p)return;
+  const srcIdx=p.tasks.findIndex(t=>t.id===dragSrcId);
+  const tgtIdx=p.tasks.findIndex(t=>t.id===targetId);
+  if(srcIdx<0||tgtIdx<0)return;
+  const [moved]=p.tasks.splice(srcIdx,1);p.tasks.splice(tgtIdx,0,moved);
+  sv();renderOrd();renderTasks();toast('Ordre mis à jour');
+}
+function ordDragEnd(e){e.currentTarget.classList.remove('dragging');dragSrcId=null;}
+
+// ═══════════════════════════════════════════════
+// CALCULS PAGE
+// ═══════════════════════════════════════════════
+function renderCalcPage(){
+  const p=cur();
+  const empty=document.getElementById('calc-empty');const grid=document.getElementById('calc-grid');
+  if(!p||!p.calcDone||!p.tasks.length){empty.style.display='block';grid.style.display='none';return;}
+  empty.style.display='none';grid.style.display='grid';
+  const{sorted}=pertCalc(p.tasks);
+  grid.innerHTML=sorted.map(t=>`
+    <div class="cc ${t.critical?'cr-c':''}">
+      <div class="cc-h"><div class="cc-n">${t.name}</div><span class="bdg ${t.critical?'cr':'nr'}">${t.critical?'Critique':'Non-critique'}</span></div>
+      <div class="cc-d">Durée : ${t.dur} jours</div>
+      <div class="cc-s"><div class="cc-sl"><i class="bi bi-calendar-check"></i> Dates au Plus Tôt</div>
+        <div class="cc-row"><span class="cc-rl">Début :</span><span class="cc-rv">Jour ${t.early}</span></div>
+        <div class="cc-row"><span class="cc-rl">Fin :</span><span class="cc-rv">Jour ${t.early+t.dur}</span></div>
+      </div>
+      <div class="cc-s"><div class="cc-sl"><i class="bi bi-clock"></i> Dates au Plus Tard</div>
+        <div class="cc-row"><span class="cc-rl">Début :</span><span class="cc-rv">Jour ${t.late}</span></div>
+        <div class="cc-row"><span class="cc-rl">Fin :</span><span class="cc-rv">Jour ${t.late+t.dur}</span></div>
+      </div>
+      <div class="cc-div"></div>
+      <div class="cc-mg">
+        <span class="cc-mgl"><i class="bi bi-graph-up"></i> Marge :</span>
+        <span class="mv ${t.margin===0?'z':'p'}">${t.margin} jours</span>
+      </div>
+    </div>`).join('');
+}
+
+// ═══════════════════════════════════════════════
+// CHEMIN CRITIQUE
+// ═══════════════════════════════════════════════
+function renderCrit(){
+  const p=cur();
+  document.getElementById('cpv-nt').textContent=p?p.tasks.length:'—';
+  if(!p||!p.calcDone){
+    document.getElementById('cpv-dur').textContent='—';document.getElementById('cpv-nc').textContent='—';
+    document.getElementById('cpf-flow').innerHTML='<span style="color:var(--t3);font-size:12.5px">Lancez les calculs d\'abord</span>';
+    document.getElementById('cpt-body').innerHTML='';return;
+  }
+  const nc=p.tasks.filter(t=>t.critical).length;
+  document.getElementById('cpv-dur').textContent=p.dur+' jours';
+  document.getElementById('cpv-nc').textContent=nc;
+  const crit=p.tasks.filter(t=>t.critical).sort((a,b)=>a.early-b.early);
+  // Flow
+  const rows=[];let row=[];
+  crit.forEach((t,i)=>{row.push(t);if(row.length===5||i===crit.length-1){rows.push([...row]);row=[];}});
+  let html='<div class="cpf">';
+  rows.forEach((r,ri)=>{
+    html+=`<div class="cpf-row">`;
+    if(ri===0)html+=`<div class="cpnw"><div class="cpn st">Début</div><div class="cpn-d"></div></div><div class="cpa"><i class="bi bi-arrow-right"></i></div>`;
+    r.forEach((t,ti)=>{
+      html+=`<div class="cpnw"><div class="cpn cr">${t.name}</div><div class="cpn-d">${t.dur}j</div></div>`;
+      if(ti<r.length-1||ri<rows.length-1)html+=`<div class="cpa"><i class="bi bi-arrow-right"></i></div>`;
+    });
+    if(ri===rows.length-1)html+=`<div class="cpa"><i class="bi bi-arrow-right"></i></div><div class="cpnw"><div class="cpn en">Fin</div><div class="cpn-d"></div></div>`;
+    html+=`</div>`;
+  });
+  html+=`</div>`;
+  document.getElementById('cpf-flow').innerHTML=html;
+  document.getElementById('cpt-body').innerHTML=crit.map(t=>`<tr>
+    <td class="st"><b style="font-family:var(--mn)">${t.id}</b> — ${t.name}</td>
+    <td style="font-family:var(--mn)">${t.dur}j</td>
+    <td style="color:var(--gn);font-family:var(--mn)">Jour ${t.early}</td>
+    <td style="color:var(--gn);font-family:var(--mn)">Jour ${t.early+t.dur}</td>
+    <td style="color:var(--am);font-family:var(--mn)">Jour ${t.late}</td>
+    <td style="color:var(--am);font-family:var(--mn)">Jour ${t.late+t.dur}</td>
+    <td><span class="bdg cr">0 j</span></td>
+  </tr>`).join('');
+}
+
+// ═══════════════════════════════════════════════
+// GRAPHE PERT (Canvas)
+// ═══════════════════════════════════════════════
+function drawPERT(){
+  const canvas=document.getElementById('pert-canvas');
+  const ctx=canvas.getContext('2d');
+  const W=canvas.offsetWidth||800;canvas.width=W;canvas.height=520;
+  ctx.clearRect(0,0,W,520);ctx.fillStyle='#fff';ctx.fillRect(0,0,W,520);
+  const p=cur();
+  if(!p||!p.tasks.length){ctx.fillStyle='#aaa';ctx.font='14px DM Sans';ctx.textAlign='center';ctx.fillText('Aucune tâche',W/2,260);return;}
+  const{sorted,map,dur}=pertCalc(p.tasks);
+  const tm={};p.tasks.forEach(t=>tm[t.id]=t);
+  const levels={};
+  function getLvl(id,stack=new Set()){
+    if(levels[id]!==undefined)return levels[id];if(stack.has(id)){levels[id]=0;return 0;}
+    stack.add(id);const t=tm[id];
+    if(!t||!t.preds.length){levels[id]=0;return 0;}
+    levels[id]=1+Math.max(...t.preds.map(p2=>getLvl(p2,new Set(stack))));return levels[id];
+  }
+  p.tasks.forEach(t=>getLvl(t.id));
+  const maxLvl=Math.max(0,...Object.values(levels));
+  const grps={};p.tasks.forEach(t=>{const l=levels[t.id];grps[l]=grps[l]||[];grps[l].push(t.id);});
+  const R=40,Rs=20,mx=48,pos={};
+  const sp={x:mx+Rs,y:260},ep={x:W-mx-Rs,y:260};
+  const uw=W-2*mx-2*Rs-70;
+  Object.entries(grps).forEach(([lvl,ids])=>{
+    const l=parseInt(lvl);const x=sp.x+35+(l+1)*uw/(maxLvl+2);
+    ids.forEach((id,i)=>{pos[id]={x,y:(i+1)*520/(ids.length+1)};});
+  });
+  const allIds=new Set(p.tasks.map(t=>t.id));
+  const predSet=new Set(p.tasks.flatMap(t=>t.preds));
+  const endNodes=[...allIds].filter(id=>!predSet.has(id));
+  const startNodes=p.tasks.filter(t=>!t.preds.length).map(t=>t.id);
+  p.tasks.forEach(t=>{t.preds.forEach(pid=>{if(!pos[pid]||!pos[t.id])return;const ca=p.calcDone&&critHL&&tm[pid]?.critical&&t.critical;drawArc(ctx,pos[pid].x+R,pos[pid].y,pos[t.id].x-R,pos[t.id].y,ca);});});
+  startNodes.forEach(id=>{if(!pos[id])return;const ca=p.calcDone&&critHL&&tm[id]?.critical;drawArc(ctx,sp.x+Rs,sp.y,pos[id].x-R,pos[id].y,ca);});
+  endNodes.forEach(id=>{if(!pos[id])return;const ca=p.calcDone&&critHL&&tm[id]?.critical;drawArc(ctx,pos[id].x+R,pos[id].y,ep.x-Rs,ep.y,ca);});
+  p.tasks.forEach(t=>{const pp=pos[t.id];if(!pp)return;const ic=p.calcDone&&t.critical&&critHL;drawNode(ctx,pp.x,pp.y,R,t,ic,p.calcDone);});
+  drawSN(ctx,sp.x,sp.y,Rs,'α','0','0');
+  drawSN(ctx,ep.x,ep.y,Rs,'ω',p.calcDone?String(dur):'?',p.calcDone?String(dur):'?');
+}
+function drawArc(ctx,x1,y1,x2,y2,cr){
+  const dx=x2-x1,dy=y2-y1,len=Math.sqrt(dx*dx+dy*dy);if(len<2)return;
+  const ux=dx/len,uy=dy/len,ex=x2-ux*11,ey=y2-uy*11;
+  ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(ex,ey);
+  ctx.strokeStyle=cr?'#e8194b':'#d0d0ca';ctx.lineWidth=cr?2:1.5;ctx.stroke();
+  const ax=ex-ux*12-uy*6,ay=ey-uy*12+ux*6,bx=ex-ux*12+uy*6,by=ey-uy*12-ux*6;
+  ctx.beginPath();ctx.moveTo(ex,ey);ctx.lineTo(ax,ay);ctx.lineTo(bx,by);ctx.closePath();
+  ctx.fillStyle=cr?'#e8194b':'#d0d0ca';ctx.fill();
+}
+function drawNode(ctx,x,y,R,task,isCrit,calcDone){
+  ctx.save();ctx.shadowColor='rgba(0,0,0,.07)';ctx.shadowBlur=12;ctx.shadowOffsetY=2;
+  ctx.beginPath();ctx.arc(x,y,R,0,Math.PI*2);ctx.fillStyle=isCrit?'#fff0f4':'#f7f7f5';ctx.fill();ctx.restore();
+  ctx.beginPath();ctx.arc(x,y,R,0,Math.PI*2);ctx.strokeStyle=isCrit?'#e8194b':'#d0d0ca';ctx.lineWidth=isCrit?2:1.5;ctx.stroke();
+  if(calcDone){
+    ctx.beginPath();ctx.moveTo(x-R,y);ctx.lineTo(x+R,y);ctx.strokeStyle='rgba(0,0,0,.07)';ctx.lineWidth=1;ctx.stroke();
+    ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x,y+R);ctx.stroke();
+  }
+  const short=task.name.length>10?task.name.slice(0,9)+'…':task.name;
+  ctx.textAlign='center';ctx.fillStyle=isCrit?'#bf0d39':'#3a3a38';
+  ctx.font='bold 11px DM Sans';ctx.fillText(short,x,calcDone?y-11:y-4);
+  ctx.fillStyle=isCrit?'#d4204a':'#888882';ctx.font='10px DM Mono';ctx.fillText(task.dur+'j',x,calcDone?y+2:y+10);
+  if(calcDone){
+    ctx.fillStyle='#16a34a';ctx.font='bold 10px DM Mono';ctx.textAlign='center';ctx.fillText(task.early,x-R/2,y+R*0.65);
+    ctx.fillStyle='#b45309';ctx.font='bold 10px DM Mono';ctx.fillText(task.late,x+R/2,y+R*0.65);
+  }
+}
+function drawSN(ctx,x,y,R,label,dp,dt){
+  ctx.save();ctx.shadowColor='rgba(0,0,0,.05)';ctx.shadowBlur=7;
+  ctx.beginPath();ctx.arc(x,y,R,0,Math.PI*2);ctx.fillStyle='#f0f0ec';ctx.fill();ctx.restore();
+  ctx.beginPath();ctx.arc(x,y,R,0,Math.PI*2);ctx.strokeStyle='#bbbbb4';ctx.lineWidth=1.5;ctx.stroke();
+  ctx.beginPath();ctx.moveTo(x-R,y);ctx.lineTo(x+R,y);ctx.strokeStyle='rgba(0,0,0,.08)';ctx.lineWidth=.8;ctx.stroke();
+  ctx.fillStyle='#6b6b65';ctx.font='bold 10px DM Sans';ctx.textAlign='center';ctx.fillText(label,x,y-4);
+  ctx.fillStyle='#16a34a';ctx.font='8px DM Mono';ctx.fillText(dp,x-R/2+2,y+R*0.62);
+  ctx.fillStyle='#b45309';ctx.font='8px DM Mono';ctx.fillText(dt,x+R/2-2,y+R*0.62);
+}
+function toggleCHL(){critHL=!critHL;document.getElementById('chl-txt').textContent=critHL?'Masquer critiques':'Montrer critiques';drawPERT();}
+
+// ═══════════════════════════════════════════════
+// CYTOSCAPE MPM
+// ═══════════════════════════════════════════════
+function initCy(){
+  const p=cur();
+  if(typeof cytoscape==='undefined'){
+    document.getElementById('cy-container').innerHTML='<div style="text-align:center;padding:80px;color:var(--t3)"><i class="bi bi-exclamation-circle" style="font-size:28px;display:block;margin-bottom:10px"></i>Cytoscape.js non disponible (réseau requis)</div>';
+    return;
+  }
+  if(!p||!p.tasks.length){
+    document.getElementById('cy-container').innerHTML='<div style="text-align:center;padding:80px;color:var(--t3)"><i class="bi bi-diagram-3" style="font-size:28px;display:block;margin-bottom:10px"></i>Aucune tâche à afficher</div>';
+    return;
+  }
+  const{sorted,map,dur}=pertCalc(p.tasks);
+  const nodes=[];const edges=[];
+
+  // Nœud START
+  nodes.push({data:{id:'_start',label:'Début\n(α)',dur:0,early:0,late:0,margin:0,type:'special'}});
+  // Nœud END
+  nodes.push({data:{id:'_end',label:'Fin\n(ω)',dur:0,early:dur,late:dur,margin:0,type:'special'}});
+
+  sorted.forEach(t=>{
+    nodes.push({data:{id:t.id,label:`${t.id}\n${t.dur}j`,name:t.name,dur:t.dur,
+      early:map[t.id]?.early??0,late:map[t.id]?.late??0,margin:map[t.id]?.margin??0,
+      type:t.critical?'critical':'normal'}});
+    // Arcs vers les successeurs
+    t.preds.forEach(pid=>{
+      const srcId=pid;const tgtId=t.id;
+      const srcNode=sorted.find(x=>x.id===pid);
+      const bothCrit=p.calcDone&&map[pid]?.critical&&t.critical;
+      edges.push({data:{id:`${srcId}-${tgtId}`,source:srcId,target:tgtId,critical:bothCrit,weight:map[pid]?.dur||0}});
+    });
+    // Arcs depuis start
+    if(!t.preds.length){
+      const ic=p.calcDone&&t.critical;
+      edges.push({data:{id:`_start-${t.id}`,source:'_start',target:t.id,critical:ic,weight:0}});
+    }
+  });
+  // Arcs vers end
+  const allIds=new Set(sorted.map(t=>t.id));
+  const predSet=new Set(sorted.flatMap(t=>t.preds));
+  [...allIds].filter(id=>!predSet.has(id)).forEach(id=>{
+    const ic=p.calcDone&&map[id]?.critical;
+    edges.push({data:{id:`${id}-_end`,source:id,target:'_end',critical:ic,weight:map[id]?.dur||0}});
+  });
+
+  if(cyInst){try{cyInst.destroy();}catch(e){}}
+  cyInst=cytoscape({
+    container:document.getElementById('cy-container'),
+    elements:{nodes,edges},
+    style:[
+      {selector:'node',style:{
+        'label':'data(label)','text-valign':'center','text-halign':'center',
+        'background-color':'#f7f7f5','border-width':1.5,'border-color':'#d0d0ca',
+        'color':'#3a3a38','font-size':11,'font-family':'DM Sans','font-weight':500,
+        'width':70,'height':70,'shape':'ellipse','white-space':'pre',
+        'text-wrap':'wrap','text-max-width':60,'line-height':1.3,
+        'box-shadow':'0 2px 8px rgba(0,0,0,.08)'
+      }},
+      {selector:'node[type="critical"]',style:{
+        'background-color':'#fff0f4','border-color':'#e8194b','border-width':2,'color':'#bf0d39'
+      }},
+      {selector:'node[type="special"]',style:{
+        'background-color':'#f0f0ec','border-color':'#bbbbb4','color':'#6b6b65',
+        'width':50,'height':50,'font-weight':600
+      }},
+      {selector:'node:selected',style:{'border-width':3,'border-color':'#2563eb','background-color':'#eff6ff'}},
+      {selector:'edge',style:{
+        'width':1.5,'line-color':'#d0d0ca','target-arrow-color':'#d0d0ca',
+        'target-arrow-shape':'triangle','curve-style':'bezier',
+        'label':'data(weight)','font-size':9,'color':'#a8a8a0',
+        'font-family':'DM Mono','text-background-color':'#fff',
+        'text-background-opacity':1,'text-background-padding':2
+      }},
+      {selector:'edge[critical=true]',style:{
+        'line-color':'#e8194b','target-arrow-color':'#e8194b','width':2,'line-style':'solid'
+      }},
+      {selector:'edge:selected',style:{'line-color':'#2563eb','target-arrow-color':'#2563eb'}}
+    ],
+    layout:{name:'breadthfirst',directed:true,padding:30,spacingFactor:1.4},
+    userZoomingEnabled:true,userPanningEnabled:true,boxSelectionEnabled:false
+  });
+
+  cyInst.on('tap','node',function(evt){
+    const n=evt.target;const d=n.data();
+    const info=document.getElementById('cy-node-info');
+    const txt=document.getElementById('cy-info-txt');
+    if(d.type==='special'){
+      info.style.display='inline-flex';txt.textContent=d.id==='_start'?`Début (α) — Jour 0`:`Fin (ω) — Jour ${d.early}`;
+    } else {
+      info.style.display='inline-flex';
+      txt.textContent=`${d.name||d.id} — ${d.dur}j — DP:${d.early} DT:${d.late} Marge:${d.margin}j`;
+    }
+  });
+  cyInst.on('tap',function(evt){if(evt.target===cyInst)document.getElementById('cy-node-info').style.display='none';});
+}
+
+function cyLayout(name){
+  if(!cyInst)return;
+  const layouts={'breadthfirst':{name:'breadthfirst',directed:true,padding:30,spacingFactor:1.4},'dagre':{name:'breadthfirst',directed:true,padding:40,spacingFactor:1.6,circle:false}};
+  cyInst.layout(layouts[name]||layouts['breadthfirst']).run();
+}
+
+// ═══════════════════════════════════════════════
+// INTERPRÉTATION — explication étape par étape
+// ═══════════════════════════════════════════════
+function renderInterpSel(){
+  const p=cur();const sel=document.getElementById('interp-sel');
+  sel.innerHTML='<option value="">— choisissez une tâche —</option>';
+  if(!p||!p.calcDone){document.getElementById('interp-content').innerHTML='<div class="card" style="text-align:center;padding:40px;color:var(--t3)"><i class="bi bi-calculator" style="font-size:26px;display:block;margin-bottom:10px"></i>Lancez les calculs d\'abord</div>';return;}
+  const{sorted}=pertCalc(p.tasks);
+  sorted.forEach(t=>{const o=document.createElement('option');o.value=t.id;o.textContent=`${t.id} — ${t.name} (${t.dur}j)`;sel.appendChild(o);});
+  document.getElementById('interp-content').innerHTML='<div style="color:var(--t3);font-size:13px;text-align:center;padding:40px">Sélectionnez une tâche pour voir l\'interprétation détaillée</div>';
+}
+
+function renderInterp(id){
+  const p=cur();if(!p||!id){document.getElementById('interp-content').innerHTML='';return;}
+  const{sorted,map,dur}=pertCalc(p.tasks);
+  const t=map[id];if(!t)return;
+  const tm={};p.tasks.forEach(x=>tm[x.id]=x);
+
+  // Prédécesseurs avec leurs valeurs
+  const preds=t.preds.map(pid=>map[pid]).filter(Boolean);
+  // Successeurs
+  const succs=sorted.filter(s=>s.preds.includes(id)).map(s=>map[s.id]).filter(Boolean);
+  // Tous les identifiants sans successeurs
+  const allIds=new Set(sorted.map(x=>x.id));
+  const predSet=new Set(sorted.flatMap(x=>x.preds));
+  const isEnd=!predSet.has(id);
+
+  let html=``;
+
+  // ─ ÉTAPE 1 : Tâche et contexte ─
+  html+=`<div class="step-card">
+    <div class="step-header"><div class="step-num">1</div><div class="step-title">Identification de la tâche ${id}</div></div>
+    <div class="step-body">
+      <p style="margin-bottom:10px;color:var(--t2)">Tâche <b style="color:var(--t)">${t.name}</b> — durée <b>${t.dur} jours</b></p>
+      <p style="font-size:12.5px;color:var(--t3)">
+        ${preds.length===0?`Cette tâche n'a <b>aucun prédécesseur</b> — elle peut démarrer dès le début du projet (Jour 0).`
+          :`Prédécesseurs directs : ${preds.map(pr=>`<span class="bdg nr">${pr.id} (${pr.dur}j)</span>`).join(' ')}`}
+      </p>
+    </div>
+  </div>`;
+
+  // ─ ÉTAPE 2 : Pass avant (Date au plus tôt) ─
+  html+=`<div class="step-card">
+    <div class="step-header"><div class="step-num" style="background:var(--gn)">2</div><div class="step-title">Calcul de la Date au Plus Tôt (DP = t_${id})</div></div>
+    <div class="step-body">
+      <p style="font-size:12.5px;color:var(--t2);margin-bottom:10px">
+        Formule : <b>t_j = max(t_i + d_i)</b> pour tous les prédécesseurs i
+        <span class="interp-note"> — M. Gaye UCAO p.28 : "t_D = max(16+5, 14+0) = 21"</span>
+      </p>`;
+
+  if(preds.length===0){
+    html+=`<div class="formula-box">t_${id} = <span class="gn">0</span> (pas de prédécesseur → démarre au Jour 0)</div>`;
+  } else {
+    html+=`<div class="formula-box">t_${id} = max(`;
+    html+=preds.map(pr=>`<span class="bl">${pr.id}:t=${pr.early}</span> + <span class="bl">d=${pr.dur}</span> = <span class="gn">${pr.early+pr.dur}</span>`).join(',  ');
+    html+=`)<br>t_${id} = max(${preds.map(pr=>pr.early+pr.dur).join(', ')}) = <span class="gn">${t.early}</span></div>`;
+    html+=`<p style="font-size:12px;color:var(--t3);margin-top:8px">La tâche ${id} ne peut commencer qu'après que TOUS ses prédécesseurs soient terminés.</p>`;
+  }
+  html+=`<div style="margin-top:10px"><span class="result-pill gn"><i class="bi bi-check-circle"></i> Date au plus tôt : Jour ${t.early}</span></div>`;
+  html+=`</div></div>`;
+
+  // ─ ÉTAPE 3 : Pass arrière (Date au plus tard) ─
+  html+=`<div class="step-card">
+    <div class="step-header"><div class="step-num" style="background:var(--am)">3</div><div class="step-title">Calcul de la Date au Plus Tard (DT = t*_${id})</div></div>
+    <div class="step-body">
+      <p style="font-size:12.5px;color:var(--t2);margin-bottom:10px">
+        Formule : <b>t*_i = min(t*_j − d_i)</b> pour tous les successeurs j
+        <span class="interp-note"> — M. Gaye UCAO p.28 : "t*_B = min(t*_D−14, t*_E−14, t*_F−14) = 9"</span>
+      </p>`;
+
+  if(succs.length===0){
+    html+=`<div class="formula-box">t*_${id} = <span class="am">${dur}</span> − <span class="am">${t.dur}</span> = <span class="am">${t.late}</span><br>(Tâche terminale → date_projet − durée)</div>`;
+  } else {
+    html+=`<div class="formula-box">t*_${id} = min(`;
+    html+=succs.map(s=>`<span class="am">${s.id}:t*=${s.late}</span> − <span class="am">d_${id}=${t.dur}</span> = <span class="am">${s.late-t.dur}</span>`).join(',  ');
+    html+=`)<br>t*_${id} = min(${succs.map(s=>s.late-t.dur).join(', ')}) = <span class="am">${t.late}</span></div>`;
+    html+=`<p style="font-size:12px;color:var(--t3);margin-top:8px">La date au plus tard est la dernière date possible pour démarrer sans retarder la fin du projet.</p>`;
+  }
+  html+=`<div style="margin-top:10px"><span class="result-pill am"><i class="bi bi-clock"></i> Date au plus tard : Jour ${t.late}</span></div>`;
+  html+=`</div></div>`;
+
+  // ─ ÉTAPE 4 : Marge ─
+  const isCrit=t.margin===0;
+  html+=`<div class="step-card">
+    <div class="step-header"><div class="step-num ${isCrit?'cr':''}">4</div><div class="step-title">Calcul de la Marge (m_${id})</div></div>
+    <div class="step-body">
+      <p style="font-size:12.5px;color:var(--t2);margin-bottom:10px">
+        Formule : <b>m_i = t*_i − t_i</b>
+        <span class="interp-note"> — Marge libre = temps dont dispose la tâche avant de devenir critique</span>
+      </p>
+      <div class="formula-box">
+        m_${id} = t*_${id} − t_${id}<br>
+        m_${id} = <span class="am">${t.late}</span> − <span class="gn">${t.early}</span> = <span class="${isCrit?'hi':'gn'}">${t.margin}</span>
+      </div>
+      <div style="margin-top:10px;display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+        <span class="result-pill ${isCrit?'cr':'gn'}">
+          <i class="bi bi-${isCrit?'exclamation-triangle':'check-circle'}"></i>
+          Marge = ${t.margin} jour${t.margin>1?'s':''}
+        </span>
+        ${isCrit?`<span class="bdg cr"><i class="bi bi-flag-fill"></i> Tâche CRITIQUE — tout retard décale la fin du projet</span>`
+               :`<span class="bdg ok">Tâche NON-CRITIQUE — peut avoir jusqu'à ${t.margin} jour(s) de retard</span>`}
+      </div>
+    </div>
+  </div>`;
+
+  // ─ ÉTAPE 5 : Résumé ─
+  html+=`<div class="step-card">
+    <div class="step-header"><div class="step-num" style="background:var(--bl)">5</div><div class="step-title">Résumé — Tâche ${id} : ${t.name}</div></div>
+    <div class="step-body">
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px">
+        <div class="card" style="padding:12px 14px;text-align:center">
+          <div style="font-size:10px;color:var(--t3);margin-bottom:5px;font-family:var(--mn)">DURÉE</div>
+          <div style="font-size:20px;font-weight:700;font-family:var(--mn)">${t.dur}j</div>
+        </div>
+        <div class="card" style="padding:12px 14px;text-align:center;border-color:var(--gn-bd)">
+          <div style="font-size:10px;color:var(--t3);margin-bottom:5px;font-family:var(--mn)">DÉBUT + TÔT</div>
+          <div style="font-size:20px;font-weight:700;color:var(--gn);font-family:var(--mn)">J.${t.early}</div>
+        </div>
+        <div class="card" style="padding:12px 14px;text-align:center;border-color:var(--am-bd)">
+          <div style="font-size:10px;color:var(--t3);margin-bottom:5px;font-family:var(--mn)">DÉBUT + TARD</div>
+          <div style="font-size:20px;font-weight:700;color:var(--am);font-family:var(--mn)">J.${t.late}</div>
+        </div>
+        <div class="card" style="padding:12px 14px;text-align:center;${isCrit?'border-color:var(--pk-bd)':'border-color:var(--gn-bd)'}">
+          <div style="font-size:10px;color:var(--t3);margin-bottom:5px;font-family:var(--mn)">MARGE</div>
+          <div style="font-size:20px;font-weight:700;color:${isCrit?'var(--pk)':'var(--gn)'};font-family:var(--mn)">${t.margin}j</div>
+        </div>
+      </div>
+    </div>
+  </div>`;
+
+  document.getElementById('interp-content').innerHTML=html;
+}
+
+// ═══════════════════════════════════════════════
+// SIMULATION — barre fixe ne se reset PAS seule
+// ═══════════════════════════════════════════════
+let simDay=0;
+function renderSimPage(){
+  const p=cur();
+  if(!p||!p.calcDone){
+    document.getElementById('sim-tlist').innerHTML=`<div style="text-align:center;padding:35px;color:var(--t3)"><i class="bi bi-calculator" style="font-size:24px;display:block;margin-bottom:8px"></i><div style="font-size:13px;color:var(--t2);margin-bottom:10px">Lancez les calculs d\'abord</div><button class="btn pri sm" onclick="doCalc();renderSimPage()"><i class="bi bi-arrow-right"></i> Calculer</button></div>`;
+    return;
+  }
+  const sl=document.getElementById('sim-slider');
+  sl.max=p.dur;
+  document.getElementById('sim-max-l').textContent='Jour '+p.dur;
+  document.getElementById('sim-tdur').textContent=p.dur+'j';
+  // Ne pas reset simDay ici — seulement rafraîchir l'affichage
+  simUpdate(simDay,false);
+}
+
+function simUpdate(day,fromUser=true){
+  const p=cur();if(!p||!p.calcDone)return;
+  day=Math.max(0,Math.min(day,p.dur));
+  if(fromUser)simDay=day;
+  document.getElementById('sim-slider').value=day;
+  document.getElementById('sim-day').textContent=day;
+  const pct=p.dur>0?Math.round(day/p.dur*100):0;
+  const fill=document.getElementById('sim-fill');
+  fill.style.width=pct+'%';fill.className='pfill '+(pct<30?'rd':pct===100?'gn':'am');
+  document.getElementById('sim-pct').textContent=`Avancement global : ${pct}%`;
+
+  // Update fixed bar (toujours sync, sans reset)
+  document.getElementById('sfb-day').textContent=`Jour ${day}`;
+  document.getElementById('sfb-pct').textContent=pct+'%';
+  const sfb=document.getElementById('sfb-fill');
+  sfb.style.width=pct+'%';sfb.className='pfill '+(pct<30?'rd':pct===100?'gn':'am');
+  document.getElementById('sfb-status').textContent=pct===100?'Projet terminé ✓':pct===0?'En attente…':`En cours — ${pct}%`;
+
+  const sorted=[...p.tasks].sort((a,b)=>a.early-b.early);
+  document.getElementById('sim-tlist').innerHTML=sorted.map(t=>{
+    let status,pct2,sc;
+    if(day<t.early){status='En attente';pct2=0;sc='var(--t3)';}
+    else if(day<t.early+t.dur){const done=day-t.early;pct2=Math.round(done/t.dur*100);status=`En cours — ${done}j/${t.dur}j`;sc='var(--am)';}
+    else{status='Terminée';pct2=100;sc='var(--gn)';}
+    const ic=t.critical;
+    return`<div class="sim-tr">
+      <div class="sim-tid" style="color:${ic?'var(--pk)':'var(--t2)'}">${t.id}</div>
+      <div class="sim-tn">${t.name}</div>
+      <div class="sim-tp">
+        <div class="sim-ts"><span style="color:${sc}">${status}</span><span style="color:var(--t3)">${pct2}%</span></div>
+        <div class="pbar"><div class="pfill ${ic&&pct2<100?'rd':pct2===100?'gn':'am'}" style="width:${pct2}%"></div></div>
+      </div>
+      <div class="sim-tb"><span class="bdg ${pct2===100?'ok':pct2>0?'am':'nr'}" style="${pct2===100?'':''}">
+        ${pct2===100?'Fait':pct2>0?'En cours':'Attente'}
+      </span></div>
+    </div>`;
+  }).join('');
+}
+
+function simToggle(){
+  const p=cur();if(!p||!p.calcDone){toast('Calculez le planning d\'abord','er');return;}
+  simPlaying=!simPlaying;
+  const icon=document.getElementById('sim-pi');const txt=document.getElementById('sim-pt');
+  if(simPlaying){
+    txt.textContent='Pause';icon.className='bi bi-pause-fill';
+    simInt=setInterval(()=>{
+      if(simDay>=p.dur){simPlaying=false;clearInterval(simInt);txt.textContent='Démarrer';icon.className='bi bi-play-fill';return;}
+      simUpdate(simDay+1);
+    },260);
+  } else {clearInterval(simInt);txt.textContent='Reprendre';icon.className='bi bi-play-fill';}
+}
+
+// RESET seulement sur clic bouton Recommencer
+function simReset(){
+  clearInterval(simInt);simPlaying=false;simDay=0;
+  document.getElementById('sim-pi').className='bi bi-play-fill';
+  document.getElementById('sim-pt').textContent='Démarrer';
+  simUpdate(0);
+}
+
+// ═══════════════════════════════════════════════
+// HOME & SIDEBAR
+// ═══════════════════════════════════════════════
+function renderHome(){
+  const grid=document.getElementById('home-grid');
+  const savedSec=document.getElementById('saved-sec');
+  if(!projs.length){
+    savedSec.style.display='block';
+    grid.innerHTML=`<div class="saved-empty">Aucun projet sauvegardé</div>`;return;
+  }
+  savedSec.style.display='block';
+  grid.innerHTML=projs.map(p=>`
+    <div class="pjrow" onclick="selectProj('${p.id}')">
+      <div class="pjrow-info">
+        <div class="pjrow-name">${p.name}</div>
+        <div class="pjrow-meta">
+          ${p.desc?`<span>${p.desc}</span>`:''} 
+          <span><i class="bi bi-list-task"></i>${p.tasks.length} tâches</span>
+          ${p.calcDone?`<span><i class="bi bi-clock"></i>${p.dur}j</span>`:''}
+          <span><i class="bi bi-calendar3"></i>${new Date(p.date||p.created).toLocaleDateString('fr-FR')}</span>
+        </div>
+      </div>
+      <i class="bi bi-gear pjrow-icon"></i>
+    </div>`).join('');
+}
+function renderSidebar(){
+  const list=document.getElementById('sb-list');
+  if(!projs.length){list.innerHTML='<div style="font-size:11px;color:var(--t3)">Aucun projet</div>';return;}
+  list.innerHTML=projs.slice(-4).reverse().map(p=>`
+    <div class="sb-pi ${p.id===curId?'on':''}" onclick="selectProj('${p.id}')">
+      <div class="sb-pn">${p.name}</div><div class="sb-pc">${p.tasks.length}t</div>
+    </div>`).join('');
+}
+
+// ═══════════════════════════════════════════════
+// MODALS & UTILS
+// ═══════════════════════════════════════════════
+const openMd=id=>document.getElementById(id).classList.add('on');
+const closeMd=id=>document.getElementById(id).classList.remove('on');
+document.querySelectorAll('.mdbg').forEach(bg=>bg.addEventListener('click',e=>{if(e.target===bg)bg.classList.remove('on');}));
+
+function toast(msg,type='info'){
+  const el=document.getElementById('toast');
+  const icons={ok:'bi-check-circle',er:'bi-exclamation-circle',info:'bi-info-circle'};
+  el.innerHTML=`<i class="bi ${icons[type]||icons.info}"></i>${msg}`;
+  el.className=`on${type==='ok'?' ok':type==='er'?' er':''}`;
+  clearTimeout(el._t);el._t=setTimeout(()=>el.classList.remove('on'),2700);
+}
+
+// ═══════════════════════════════════════════════
+// DEMO DATA (exemple M.Gaye UCAO Lic Pro 2020-2021 p.28)
+// ═══════════════════════════════════════════════
+function loadDemo(){
+  if(projs.length)return;
+  const demo={
+    id:'p_demo',name:'Projet Bâtiment (M.Gaye UCAO)',
+    desc:'Exemple du cours RO Lic Pro 2020-2021 — p.28',
+    date:'2024-01-01',
+    tasks:[
+      {id:'A',name:'Tâche A',dur:16,preds:[],early:null,late:null,margin:null,critical:false},
+      {id:'B',name:'Tâche B',dur:14,preds:[],early:null,late:null,margin:null,critical:false},
+      {id:'C',name:'Tâche C',dur:20,preds:[],early:null,late:null,margin:null,critical:false},
+      {id:'D',name:'Tâche D',dur:8,preds:['A','B'],early:null,late:null,margin:null,critical:false},
+      {id:'E',name:'Tâche E',dur:18,preds:['B'],early:null,late:null,margin:null,critical:false},
+      {id:'F',name:'Tâche F',dur:25,preds:['B','C'],early:null,late:null,margin:null,critical:false},
+      {id:'G',name:'Tâche G',dur:15,preds:['D','E','F'],early:null,late:null,margin:null,critical:false},
+      {id:'H',name:'Tâche H',dur:17,preds:['E'],early:null,late:null,margin:null,critical:false},
+      {id:'I',name:'Tâche I',dur:10,preds:['D','E','F'],early:null,late:null,margin:null,critical:false},
+    ],
+    calcDone:false,dur:0,created:Date.now()
+  };
+  projs.push(demo);
+  const r=pertCalc(demo.tasks);
+  demo.tasks.forEach(t=>{const c=r.map[t.id];if(c){t.early=c.early;t.late=c.late;t.margin=c.margin;t.critical=c.critical;}});
+  demo.calcDone=true;demo.dur=r.dur;
+  curId='p_demo';sv();
+}
+
+// ═══ INIT ═══
+ld();renderSidebar();goTo('home');
+window.addEventListener('resize',()=>{
+  if(document.getElementById('pg-graph').classList.contains('on'))drawPERT();
+});
+</script>
+  </body>
+</html>

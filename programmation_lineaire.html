@@ -1,0 +1,1301 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <title>Simplexe de Dantzig — RO</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+  <style>
+    :root{
+      --bg:#f8fafc;--w:#fff;--b:#e5e7eb;--b2:#cbd5e1;
+      --t:#111827;--mu:#64748b;--mu2:#94a3b8;
+      --bl:#3b82f6;--bl2:#2563eb;--bl3:#dbeafe;
+      --gn:#22c55e;--gn2:#16a34a;--gn3:#dcfce7;
+      --or:#f97316;--or2:#ea580c;--or3:#ffedd5;
+      --pu:#8b5cf6;--pu2:#6d28d9;--pu3:#ede9fe;
+      --rd:#ef4444;--rd2:#b91c1c;--rd3:#fee2e2;
+      --am:#f59e0b;--am3:#fffbeb;
+      --shadow:0 18px 45px rgba(15,23,42,.08);
+      --r:14px;
+      --font:Inter,'Segoe UI',system-ui,-apple-system,sans-serif;
+      --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+    }
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{background:var(--bg);color:var(--t);font-family:var(--font);font-size:14px}
+    button,input,select{font:inherit}
+
+    .app-nav{height:58px;background:var(--w);border-bottom:1px solid var(--b);display:flex;align-items:center;gap:10px;padding:0 18px;position:sticky;top:0;z-index:100}
+    .nav-ib{width:34px;height:34px;border-radius:10px;border:1px solid var(--b);background:var(--bg);display:grid;place-items:center;color:var(--mu);cursor:pointer;transition:.15s;flex-shrink:0}
+    .nav-ib:hover{background:var(--b);color:var(--t)}
+    .nav-title{font-weight:850;font-size:15px}
+    .nav-sub{font-size:11.5px;color:var(--mu)}
+    .nav-right{margin-left:auto;display:flex;gap:8px}
+
+    .page{display:none}.page.active{display:block}
+    .wrap{max-width:1060px;margin:auto;padding:30px 18px 90px}
+
+    .hero-title{font-size:26px;font-weight:900;letter-spacing:-.04em;margin-bottom:4px}
+    .section-title{font-size:15px;font-weight:800;margin-bottom:12px;color:var(--t)}
+    .muted{color:var(--mu)}
+    .text-sm{font-size:12.5px}
+
+    .btn{display:inline-flex;align-items:center;gap:6px;padding:8px 18px;border-radius:10px;border:none;font-weight:700;font-size:13.5px;cursor:pointer;transition:.15s;text-decoration:none;white-space:nowrap}
+    .btn:hover{filter:brightness(.95);transform:translateY(-1px)}
+    .btn:active{transform:scale(.98)}
+    .btn-sm{padding:5px 12px;font-size:12.5px;border-radius:8px}
+    .btn-pu{background:var(--pu);color:#fff}
+    .btn-or{background:var(--or);color:#fff}
+    .btn-gn{background:var(--gn);color:#fff}
+    .btn-bl{background:var(--bl);color:#fff}
+    .btn-rd{background:var(--rd);color:#fff}
+    .btn-gh{background:var(--bg);border:1px solid var(--b);color:var(--t)}
+
+    .card{background:var(--w);border:1px solid var(--b);border-radius:var(--r);padding:22px}
+    .card-sm{background:var(--w);border:1px solid var(--b);border-radius:10px;padding:15px}
+    .card+.card,.card+.card-sm,.card-sm+.card,.card-sm+.card-sm{margin-top:14px}
+
+    .choice-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:22px}
+    @media(max-width:640px){.choice-grid{grid-template-columns:1fr}}
+    .choice{background:var(--w);border:1.5px solid var(--b);border-radius:18px;padding:26px 20px;text-align:center;cursor:pointer;transition:.18s}
+    .choice:hover{transform:translateY(-4px);box-shadow:var(--shadow);border-color:var(--or)}
+    .ic{width:60px;height:60px;border-radius:16px;margin:0 auto 14px;display:grid;place-items:center;color:#fff;font-size:26px}
+    .ic.sx{background:linear-gradient(135deg,var(--or),var(--or2))}
+    .ic.gr{background:linear-gradient(135deg,var(--gn),var(--gn2))}
+
+    .field{display:flex;flex-direction:column;gap:5px;margin-bottom:2px}
+    .field label{font-size:12px;font-weight:700;color:var(--mu);display:flex;align-items:center;gap:5px;flex-wrap:wrap}
+    .field label .tip{font-weight:400;color:var(--mu2);font-size:11px}
+    .field input,.field select{padding:8px 12px;border:1.5px solid var(--b2);border-radius:9px;font-size:14px;font-family:var(--font);transition:.15s;outline:none;background:var(--w);color:var(--t)}
+    .field input:focus,.field select:focus{border-color:var(--or);box-shadow:0 0 0 3px var(--or3)}
+    .field-hint{font-size:11.5px;color:var(--mu2);margin-top:3px}
+
+    .dim-picker{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+    .dim-box{display:flex;align-items:center;gap:8px;background:var(--bg);border:1.5px solid var(--b);border-radius:10px;padding:8px 14px}
+    .dim-box label{font-size:13px;font-weight:700;white-space:nowrap}
+    .dim-ctrl{display:flex;align-items:center;gap:6px}
+    .dim-btn{width:28px;height:28px;border-radius:8px;border:1.5px solid var(--b2);background:var(--w);font-size:16px;font-weight:800;cursor:pointer;display:grid;place-items:center;transition:.15s;color:var(--t)}
+    .dim-btn:hover{background:var(--or);border-color:var(--or);color:#fff}
+    .dim-val{min-width:28px;text-align:center;font-size:16px;font-weight:900;color:var(--or)}
+    .dim-badge{display:inline-flex;align-items:center;gap:4px;background:var(--or3);color:var(--or2);padding:3px 10px;border-radius:99px;font-size:12px;font-weight:700}
+
+    .step-wizard{counter-reset:wiz}
+    .wiz-step{position:relative;padding-left:44px;margin-bottom:22px}
+    .wiz-step::before{counter-increment:wiz;content:counter(wiz);position:absolute;left:0;top:0;width:30px;height:30px;border-radius:50%;background:var(--or);color:#fff;font-weight:900;font-size:13px;display:grid;place-items:center}
+    .wiz-step::after{content:'';position:absolute;left:14px;top:34px;width:2px;height:calc(100% - 10px);background:var(--b)}
+    .wiz-step:last-child::after{display:none}
+
+    .var-block{background:var(--bg);border:1px solid var(--b);border-radius:10px;padding:14px 16px;margin-bottom:10px}
+    .var-block-header{display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap}
+    .var-pill{display:inline-flex;align-items:center;gap:5px;background:var(--bl3);color:var(--bl2);padding:3px 10px;border-radius:99px;font-size:12px;font-weight:700}
+    .cst-pill{display:inline-flex;align-items:center;gap:5px;background:var(--pu3);color:var(--pu2);padding:3px 10px;border-radius:99px;font-size:12px;font-weight:700}
+
+    .eq-preview{background:var(--bg);border:1px solid var(--b);border-radius:8px;padding:9px 14px;font-family:var(--mono);font-size:13px;color:var(--mu);margin-top:10px;transition:.3s;line-height:1.6}
+    .eq-preview .hl{color:var(--or);font-weight:700}
+    .eq-preview .hl2{color:var(--bl);font-weight:700}
+
+    .obj-preview{background:var(--or3);border:1.5px solid var(--or);border-radius:10px;padding:12px 16px;font-family:var(--mono);font-size:14px;font-weight:700;color:var(--or2);margin-bottom:14px;line-height:1.7}
+
+    .init-badge{display:inline-flex;align-items:center;gap:5px;background:var(--mu2);color:#fff;padding:3px 10px;border-radius:99px;font-size:12px;font-weight:700}
+
+    .info-box{border-left:4px solid var(--bl);background:var(--bl3);border-radius:0 10px 10px 0;padding:12px 16px;font-size:13px;line-height:1.6}
+    .info-box+.info-box{margin-top:8px}
+    .info-box.ok{border-color:var(--gn);background:var(--gn3)}
+    .info-box.warn{border-color:var(--am);background:var(--am3)}
+    .info-box.err{border-color:var(--rd);background:var(--rd3)}
+    .math-block{background:var(--bg);border:1px solid var(--b);border-radius:10px;padding:12px 16px;font-family:var(--mono);font-size:13.5px;line-height:1.9}
+    .math-block .hl{color:var(--or);font-weight:900}
+    .math-block .hl2{color:var(--bl);font-weight:900}
+    .math-block .hl3{color:var(--gn2);font-weight:900}
+
+    .prog-wrap{display:flex;align-items:center;gap:5px;margin-bottom:20px;overflow-x:auto;padding-bottom:4px;scrollbar-width:none}
+    .prog-wrap::-webkit-scrollbar{display:none}
+    .prog-dot{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;font-size:11px;font-weight:800;border:2px solid var(--b);color:var(--mu);background:var(--w);transition:.25s;flex-shrink:0;cursor:pointer}
+    .prog-dot:hover{border-color:var(--or);color:var(--or)}
+    .prog-dot.active{border-color:var(--or);color:var(--or);background:var(--or3)}
+    .prog-dot.done{border-color:var(--gn);color:#fff;background:var(--gn)}
+    .prog-line{flex:1;height:2px;min-width:10px;background:var(--b);border-radius:2px;transition:.25s}
+    .prog-line.done{background:var(--gn)}
+
+    .step-header{display:flex;align-items:flex-start;gap:12px;padding:14px 16px;border-radius:12px;margin-bottom:16px}
+    .step-header.t0{background:#f1f5f9;border-left:4px solid var(--mu2)}
+    .step-header.t1{background:var(--bl3);border-left:4px solid var(--bl)}
+    .step-header.t2{background:var(--or3);border-left:4px solid var(--or)}
+    .step-header.t3{background:var(--gn3);border-left:4px solid var(--gn)}
+    .step-header.t4{background:var(--pu3);border-left:4px solid var(--pu)}
+    .step-num{width:38px;height:38px;border-radius:50%;display:grid;place-items:center;font-weight:900;font-size:14px;color:#fff;flex-shrink:0;margin-top:2px}
+    .step-header.t0 .step-num{background:var(--mu2)}
+    .step-header.t1 .step-num{background:var(--bl)}
+    .step-header.t2 .step-num{background:var(--or)}
+    .step-header.t3 .step-num{background:var(--gn)}
+    .step-header.t4 .step-num{background:var(--pu)}
+    .step-title{font-weight:800;font-size:15px}
+    .step-desc{font-size:12.5px;color:var(--mu);margin-top:4px;line-height:1.55}
+
+    .sx-wrap{overflow-x:auto;margin-bottom:14px;border-radius:10px;border:1px solid var(--b);background:#fff}
+    .sx-table{border-collapse:collapse;width:100%;min-width:360px;font-size:12.5px;font-family:var(--mono)}
+    .sx-table th{padding:8px 12px;text-align:center;font-weight:800;color:#fff;border:1px solid rgba(255,255,255,.2)}
+    .sx-table td{padding:7px 12px;text-align:center;border:1px solid var(--b)}
+    .sx-table .base-col{background:var(--bg);font-weight:800;color:var(--t)}
+    .sx-table .z-row td,.sx-table .z-row .base-col{background:#f8f9fc;color:var(--mu);font-weight:700}
+    .sx-table td.pc{background:var(--bl3)}
+    .sx-table td.pr{background:var(--or3)}
+    .sx-table td.piv{background:var(--or)!important;color:#fff!important;font-weight:900;outline:2.5px solid var(--or2)}
+    .sx-table td.opt-rhs{background:var(--gn3);color:var(--gn2);font-weight:800}
+    .th-gray th{background:var(--mu2)}
+    .th-blue th{background:var(--bl)}
+    .th-orange th{background:var(--or)}
+    .th-green th{background:var(--gn)}
+    .th-purple th{background:var(--pu)}
+
+    .ratio-tbl{border-collapse:collapse;width:100%;font-size:13px;border-radius:8px;overflow:hidden;border:1px solid var(--b)}
+    .ratio-tbl th{padding:8px 12px;background:var(--bg);font-weight:800;text-align:center;border-bottom:1px solid var(--b)}
+    .ratio-tbl td{padding:7px 12px;text-align:center;border-bottom:1px solid var(--b)}
+    .ratio-tbl .pr-row td{background:var(--or3);font-weight:800;color:var(--or2)}
+    .ratio-tbl .ign-row td{color:var(--mu2);font-style:italic}
+
+    .result-box{background:var(--gn3);border:1.5px solid var(--gn);border-radius:12px;padding:20px;margin-bottom:16px}
+    .result-box h3{color:var(--gn2);font-size:17px;font-weight:900;margin-bottom:14px}
+    .result-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:10px;margin-bottom:12px}
+    .result-var{background:var(--w);border:1px solid var(--b);border-radius:10px;padding:12px;text-align:center}
+    .result-var .val{font-size:20px;font-weight:900;color:var(--gn2)}
+    .result-var .lbl{font-size:11px;color:var(--mu);margin-top:3px;line-height:1.3}
+    .result-z{background:var(--gn);border-radius:10px;padding:14px;text-align:center}
+    .result-z .val{font-size:28px;font-weight:900;color:#fff}
+    .result-z .lbl{font-size:12px;color:rgba(255,255,255,.8);margin-top:2px}
+
+    .cst-check{display:flex;flex-direction:column;gap:8px;margin:12px 0}
+    .cst-row{display:flex;align-items:center;gap:10px;background:var(--w);border:1px solid var(--b);border-radius:9px;padding:9px 13px;font-size:13px;flex-wrap:wrap}
+    .cst-row .ok-ic{color:var(--gn);font-size:17px;flex-shrink:0}
+    .sat-badge{margin-left:auto;font-size:11px;padding:2px 9px;border-radius:99px;font-weight:700;white-space:nowrap;flex-shrink:0}
+    .sat-badge.free{background:var(--bl3);color:var(--bl2)}
+    .sat-badge.full{background:var(--or3);color:var(--or2)}
+    .sat-badge.eq{background:var(--pu3);color:var(--pu2)}
+
+    .graph-note{font-size:12.5px;color:var(--mu);margin-top:10px;padding:8px 12px;background:var(--am3);border-radius:8px;border-left:3px solid var(--am)}
+    .vtx-table{width:100%;border-collapse:collapse;font-size:13px}
+    .vtx-table th,.vtx-table td{padding:8px 12px;border:1px solid var(--b);text-align:center}
+    .vtx-table th{background:var(--bg);font-weight:800}
+    .vtx-table tr.opt-row td{background:var(--gn3);color:var(--gn2);font-weight:900}
+
+    .saved-item{display:flex;align-items:center;justify-content:space-between;background:var(--w);border:1px solid var(--b);border-radius:10px;padding:11px 15px;cursor:pointer;transition:.15s;margin-bottom:8px}
+    .saved-item:hover{border-color:var(--or);background:var(--or3)}
+    .saved-item:hover .saved-arrow{color:var(--or)}
+    .empty{color:var(--mu2);font-size:13px;display:block;padding:6px 0}
+
+    .nav-btns{display:flex;gap:10px;flex-wrap:wrap;margin-top:22px}
+
+    #toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);background:#1e293b;color:#fff;padding:10px 20px;border-radius:12px;font-size:13.5px;font-weight:600;opacity:0;pointer-events:none;transition:.25s;z-index:9999;display:flex;align-items:center;gap:8px;white-space:nowrap;max-width:92vw}
+    #toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+    .divider{border:none;border-top:1px solid var(--b);margin:18px 0}
+    .tag{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:99px;font-size:11.5px;font-weight:700}
+    .tag-or{background:var(--or3);color:var(--or2)}
+    .tag-bl{background:var(--bl3);color:var(--bl2)}
+    .tag-pu{background:var(--pu3);color:var(--pu2)}
+    .tag-gn{background:var(--gn3);color:var(--gn2)}
+
+    .graph-disabled{background:var(--am3);border:1.5px solid var(--am);border-radius:12px;padding:20px;text-align:center;color:var(--mu)}
+    .canvas-card{background:#fff;border:1px solid var(--b);border-radius:12px;padding:14px}
+    canvas{display:block;max-width:100%;border-radius:8px;border:1px solid var(--b);background:#fff}
+
+    @media(max-width:768px){
+      .nav-sub{display:none}
+      .nav-btns{flex-direction:column}
+      .nav-btns .btn{justify-content:center}
+    }
+  </style>
+</head>
+<body>
+
+<nav class="app-nav">
+  <button class="nav-ib" id="homeBtn" onclick="window.location.href='index.html'" title="Accueil — Recherche Opérationnelle">
+    <i class="bi bi-house"></i>
+  </button>
+  <button class="nav-ib" id="backBtn" onclick="goBack()" style="display:none" title="Retour">
+    <i class="bi bi-arrow-left"></i>
+  </button>
+  <div style="overflow:hidden">
+    <div class="nav-title" id="navTitle">Simplexe de Dantzig</div>
+    <div class="nav-sub" id="navSub">Programmation Linéaire — Maximisation et minimisation</div>
+  </div>
+  <div class="nav-right">
+    <button class="btn btn-sm btn-gh" onclick="resetModule()" title="Réinitialiser">
+      <i class="bi bi-arrow-counterclockwise"></i><span class="d-none d-sm-inline"> Reset</span>
+    </button>
+  </div>
+</nav>
+
+<div id="page-home" class="page active">
+  <div class="wrap">
+    <div class="hero-title">Algorithme du Simplexe</div>
+    <div class="muted" style="margin-bottom:24px">Version pédagogique renforcée — contraintes ≤, ≥, = · phase I / phase II · détection des cas infaisables et non bornés</div>
+
+    <div class="card" style="margin-bottom:20px">
+      <div class="section-title"><i class="bi bi-info-circle" style="color:var(--bl)"></i> Comment fonctionne cette version</div>
+      <p style="font-size:13px;color:var(--mu);margin-bottom:12px">
+        Cette application traite les problèmes de <b>maximisation</b> et de <b>minimisation</b>. Pour un modèle standard avec contraintes ≤ et seconds membres positifs, la base initiale est donnée par les <b>variables d'écart</b>. Si le problème contient des contraintes ≥ ou =, l'application ajoute des <b>variables artificielles</b> et lance automatiquement une <b>phase I</b>.
+      </p>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px">
+        <span class="init-badge"><i class="bi bi-circle"></i> Variables d'écart</span>
+        <span class="init-badge" style="background:var(--pu);"><i class="bi bi-plus-slash-minus"></i> Variables de surplus</span>
+        <span class="init-badge" style="background:var(--or);"><i class="bi bi-stars"></i> Variables artificielles</span>
+      </div>
+      <div class="math-block" style="font-size:12.5px">
+        <span class="hl2">Forme standard</span> : Ax + e − s + a = b &nbsp; avec &nbsp; x, e, s, a ≥ 0<br>
+        <span class="hl3">Phase I</span> : recherche d'une base réalisable &nbsp;·&nbsp; <span class="hl">Phase II</span> : optimisation de la fonction objectif
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:8px;margin-top:12px">
+        <div class="info-box"><b>① Standardisation :</b> normalisation éventuelle des seconds membres et transformation des contraintes</div>
+        <div class="info-box"><b>② Itérations :</b> variable entrante, variable sortante, pivot et ratio minimal</div>
+        <div class="info-box ok"><b>③ Diagnostic :</b> optimum, infaisabilité ou non-bornitude</div>
+      </div>
+    </div>
+
+    <div class="choice-grid">
+      <div class="choice" onclick="loadExample()">
+        <div class="ic sx"><i class="bi bi-lightning-fill"></i></div>
+        <h3 style="font-size:15px;font-weight:800;margin-bottom:8px">Exemple du cours</h3>
+        <p class="muted text-sm">Produits A & B · 2 variables · 2 contraintes · base standard<br>
+          <code style="font-size:12px">Max Z = 310x₁ + 250x₂</code><br>
+          <b style="color:var(--gn2)">Résolution détaillée + graphique + interprétation</b></p>
+      </div>
+      <div class="choice" onclick="showPage('saisie')">
+        <div class="ic gr"><i class="bi bi-sliders"></i></div>
+        <h3 style="font-size:15px;font-weight:800;margin-bottom:8px">Problème personnalisé</h3>
+        <p class="muted text-sm">Choisissez les dimensions, le sens d'optimisation et le type de chaque contrainte.<br>
+          <span class="tag tag-or" style="margin-top:6px"><i class="bi bi-diagram-3"></i> Démonstrateur pédagogique rigoureux</span></p>
+      </div>
+    </div>
+
+    <div style="margin-top:28px">
+      <div class="section-title">Problèmes récents</div>
+      <div id="saved-list"><span class="empty">Aucun problème sauvegardé.</span></div>
+    </div>
+  </div>
+</div>
+
+<div id="page-saisie" class="page">
+  <div class="wrap">
+    <div class="hero-title">Configurer le problème</div>
+    <div class="muted" style="margin-bottom:24px">Définissez votre modèle de programmation linéaire de manière progressive</div>
+
+    <div class="card step-wizard">
+      <div class="wiz-step">
+        <div class="section-title" style="margin-bottom:4px">Dimensions du problème</div>
+        <p class="muted text-sm" style="margin-bottom:14px">Choisissez le nombre de variables de décision et de contraintes.</p>
+        <div class="dim-picker">
+          <div class="dim-box">
+            <label><i class="bi bi-boxes" style="color:var(--bl)"></i> Variables</label>
+            <div class="dim-ctrl">
+              <button class="dim-btn" onclick="changeDim('n',-1)">−</button>
+              <div class="dim-val" id="dim-n">2</div>
+              <button class="dim-btn" onclick="changeDim('n',1)">+</button>
+            </div>
+          </div>
+          <div class="dim-box">
+            <label><i class="bi bi-list-ul" style="color:var(--pu)"></i> Contraintes</label>
+            <div class="dim-ctrl">
+              <button class="dim-btn" onclick="changeDim('m',-1)">−</button>
+              <div class="dim-val" id="dim-m">2</div>
+              <button class="dim-btn" onclick="changeDim('m',1)">+</button>
+            </div>
+          </div>
+        </div>
+        <div style="margin-top:12px" id="dim-summary"></div>
+      </div>
+
+      <div class="wiz-step" style="margin-top:22px">
+        <div class="section-title" style="margin-bottom:4px">Paramètres généraux</div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;max-width:760px">
+          <div class="field">
+            <label>Nom du problème <span class="tip">— pour l'historique</span></label>
+            <input id="pb-name" type="text" placeholder="ex : Plan de production trimestriel">
+          </div>
+          <div class="field">
+            <label>Sens d'optimisation</label>
+            <select id="pb-sense" onchange="updatePreviews()">
+              <option value="max">Maximiser</option>
+              <option value="min">Minimiser</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Unité de Z <span class="tip">— ex : F CFA, €, unités…</span></label>
+            <input id="pb-unit" type="text" value="F CFA" maxlength="12">
+          </div>
+        </div>
+      </div>
+
+      <div class="wiz-step" style="margin-top:22px">
+        <div class="section-title" style="margin-bottom:4px">Noms des variables <span style="font-weight:400;color:var(--mu)">(optionnel)</span></div>
+        <p class="muted text-sm" style="margin-bottom:12px">Donnez un nom à chaque variable pour un affichage plus clair.</p>
+        <div id="var-names-wrap" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px"></div>
+      </div>
+
+      <div class="wiz-step" style="margin-top:22px">
+        <div class="section-title" style="margin-bottom:4px">Fonction objectif</div>
+        <p class="muted text-sm" style="margin-bottom:12px">Saisissez les coefficients <code>cⱼ</code> de la fonction objectif.</p>
+        <div id="obj-coefs-wrap" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px;margin-bottom:12px"></div>
+        <div class="obj-preview" id="obj-preview">Z = …</div>
+      </div>
+
+      <div class="wiz-step" style="margin-top:22px">
+        <div class="section-title" style="margin-bottom:4px">Contraintes</div>
+        <p class="muted text-sm" style="margin-bottom:12px">Pour chaque contrainte, saisissez les coefficients <code>aᵢⱼ</code>, choisissez le type (≤, ≥ ou =) et le second membre <code>bᵢ</code>.</p>
+        <div id="cst-wrap"></div>
+      </div>
+
+      <div class="wiz-step" style="margin-top:22px">
+        <div class="section-title" style="margin-bottom:12px">Lancer la résolution</div>
+        <div id="validation-summary" style="margin-bottom:12px"></div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap">
+          <button class="btn btn-or" onclick="submitProblem()"><i class="bi bi-play-fill"></i> Résoudre</button>
+          <button class="btn btn-gh" onclick="showPage('home')"><i class="bi bi-x-lg"></i> Annuler</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="page-tableaux" class="page">
+  <div class="wrap">
+    <div class="hero-title" style="margin-bottom:4px">Résolution — Tableaux du simplexe</div>
+    <div class="muted" id="prob-label" style="margin-bottom:10px"></div>
+    <div id="top-status" style="margin-bottom:14px"></div>
+    <div class="prog-wrap" id="prog-wrap"></div>
+    <div id="step-content"></div>
+    <div class="nav-btns">
+      <button class="btn btn-gh" id="btnPrev" onclick="prevStep()"><i class="bi bi-chevron-left"></i> Précédent</button>
+      <button class="btn btn-or" id="btnNext" onclick="nextStep()">Suivant <i class="bi bi-chevron-right"></i></button>
+      <button class="btn btn-pu" id="btnSkip" onclick="skipToEnd()"><i class="bi bi-skip-end-fill"></i> Fin</button>
+      <button class="btn btn-gn" id="btnGraph" onclick="showPage('graphique')" style="margin-left:auto"><i class="bi bi-graph-up"></i> Graphique</button>
+    </div>
+  </div>
+</div>
+
+<div id="page-graphique" class="page">
+  <div class="wrap">
+    <div class="hero-title" style="margin-bottom:4px">Représentation graphique</div>
+    <div class="muted" id="graph-label" style="margin-bottom:18px"></div>
+    <div id="graph-body"></div>
+    <div class="nav-btns">
+      <button class="btn btn-gh" onclick="showPage('tableaux')"><i class="bi bi-chevron-left"></i> Retour tableaux</button>
+      <button class="btn btn-or" onclick="showPage('saisie')"><i class="bi bi-pencil"></i> Nouveau problème</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+/* ============================================================
+   STATE
+============================================================ */
+const STORE = 'ro_simplex_fixed_v4';
+const EPS = 1e-9;
+const MAX_ITER = 120;
+let DIM = {n:2, m:2};
+let PROB = null;
+let RES = null;
+let STEPS = [];
+let CUR = 0;
+
+/* ============================================================
+   HELPERS
+============================================================ */
+const $ = id => document.getElementById(id);
+const esc = x => String(x ?? '').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+function deepClone(obj){ return JSON.parse(JSON.stringify(obj)); }
+function roundClean(x,p=12){ const f=Math.pow(10,p); const y=Math.round(x*f)/f; return Math.abs(y)<EPS?0:y; }
+function fr(v){ const n=Number(v||0); return isNaN(n)?'0':n.toLocaleString('fr-FR',{maximumFractionDigits:2}); }
+function fmt(v){ if(v===Infinity)return '∞'; if(v===-Infinity)return '-∞'; if(!Number.isFinite(v))return '—'; const r=roundClean(v,6); return Number.isInteger(r)?String(r):String(Math.round(r*1000)/1000).replace(/\.?0+$/,''); }
+function money(v,unit){ return `${fr(v)} ${unit||''}`.trim(); }
+function gcd(a,b){ return b?gcd(b,a%b):(a||1); }
+function frac(v){ if(!Number.isFinite(v))return '?'; const r=roundClean(v,8); if(Math.abs(r)<EPS)return '0'; if(Number.isInteger(r))return String(r); for(let d of [2,3,4,5,6,8,10,12,20,25,50,100]){ const n=Math.round(r*d); if(Math.abs(n/d-r)<1e-8){ const g=gcd(Math.abs(n),d); return `${n/g}/${d/g}`; } } return String(Math.round(r*1000)/1000).replace(/\.?0+$/,''); }
+function clamp(v,a,b){ return Math.max(a,Math.min(b,v)); }
+function toast(msg,type='ok'){
+  const colors={ok:'var(--gn)',warn:'var(--am)',err:'var(--rd)'};
+  const icons={ok:'check-circle',warn:'exclamation-triangle',err:'x-circle'};
+  $('toast').innerHTML=`<i class="bi bi-${icons[type]||'info-circle'}" style="color:${colors[type]||'var(--bl)'}"></i>${esc(msg)}`;
+  $('toast').classList.add('show');
+  clearTimeout($('toast')._t);
+  $('toast')._t=setTimeout(()=>$('toast').classList.remove('show'),3000);
+}
+
+/* ============================================================
+   NAVIGATION
+============================================================ */
+function showPage(p){
+  document.querySelectorAll('.page').forEach(el=>el.classList.remove('active'));
+  $('page-'+p).classList.add('active');
+  $('backBtn').style.display = p==='home' ? 'none' : '';
+  const titles={home:'Simplexe de Dantzig',saisie:'Nouveau problème',tableaux:'Résolution — Tableaux',graphique:'Représentation Graphique'};
+  $('navTitle').textContent=titles[p]||'Simplexe';
+  $('navSub').textContent=(p==='tableaux'||p==='graphique')&&PROB ? PROB.name : 'Programmation Linéaire — Maximisation et minimisation';
+  if(p==='home') renderSaved();
+  if(p==='tableaux' && STEPS.length) renderStep();
+  if(p==='graphique' && PROB && RES) renderGraph();
+}
+function goBack(){ showPage('home'); }
+
+/* ============================================================
+   FORM BUILDING
+============================================================ */
+function changeDim(axis,delta){
+  DIM[axis]=Math.max(1,DIM[axis]+delta);
+  $('dim-'+axis).textContent=DIM[axis];
+  rebuildForm();
+}
+
+function rebuildForm(){
+  const n=DIM.n,m=DIM.m;
+  $('dim-summary').innerHTML=`
+    <span class="dim-badge"><i class="bi bi-boxes"></i> ${n} variable${n>1?'s':''}</span>
+    &nbsp;
+    <span class="dim-badge" style="background:var(--pu3);color:var(--pu2)"><i class="bi bi-list-ul"></i> ${m} contrainte${m>1?'s':''}</span>
+    &nbsp;
+    <span class="text-sm muted">Graphique disponible seulement si n = 2</span>`;
+
+  let vnHtml='';
+  for(let j=0;j<n;j++){
+    const prev=($(`vname-${j}`)||{}).value||'';
+    vnHtml += `
+      <div class="field">
+        <label><span class="var-pill">x${j+1}</span></label>
+        <input id="vname-${j}" type="text" placeholder="ex : Produit ${String.fromCharCode(65+j)}" value="${esc(prev)}">
+      </div>`;
+  }
+  $('var-names-wrap').innerHTML=vnHtml;
+
+  let objHtml='';
+  for(let j=0;j<n;j++){
+    const prev=($(`c-${j}`)||{}).value||'';
+    objHtml += `
+      <div class="field">
+        <label><span class="var-pill">c${j+1}</span> Coefficient de x${j+1}</label>
+        <input id="c-${j}" type="number" step="any" placeholder="ex: ${[310,250,180][j]||100}" value="${esc(prev)}" oninput="updatePreviews()">
+      </div>`;
+  }
+  $('obj-coefs-wrap').innerHTML=objHtml;
+
+  let cstHtml='';
+  for(let i=0;i<m;i++){
+    const prevLbl=($(`lbl-${i}`)||{}).value||'';
+    const prevType=($(`type-${i}`)||{}).value||'<=';
+    let coeffInputs='';
+    for(let j=0;j<n;j++){
+      const prev=($(`a-${i}-${j}`)||{}).value||'';
+      coeffInputs += `
+        <div class="field">
+          <label><span class="var-pill" style="font-size:11px">a${i+1}${j+1}</span> Coefficient de x${j+1}</label>
+          <input id="a-${i}-${j}" type="number" step="any" placeholder="0" value="${esc(prev)}" oninput="updatePreviews()">
+        </div>`;
+    }
+    cstHtml += `
+      <div class="var-block">
+        <div class="var-block-header">
+          <span class="cst-pill"><i class="bi bi-list-ul"></i> Contrainte ${i+1}</span>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;margin-bottom:10px">
+          ${coeffInputs}
+          <div class="field">
+            <label><span class="tag tag-pu">Type</span></label>
+            <select id="type-${i}" onchange="updatePreviews()">
+              <option value="<=" ${prevType==='<='?'selected':''}>≤</option>
+              <option value=">=" ${prevType==='>='?'selected':''}>≥</option>
+              <option value="=" ${prevType==='='?'selected':''}>=</option>
+            </select>
+          </div>
+          <div class="field">
+            <label><span class="tag tag-or">b${i+1}</span> Second membre</label>
+            <input id="b-${i}" type="number" step="any" placeholder="ex : 240" value="${($(`b-${i}`)||{}).value||''}" oninput="updatePreviews()">
+            <span class="field-hint">Peut être positif, nul ou négatif</span>
+          </div>
+        </div>
+        <div class="field">
+          <label><i class="bi bi-tag"></i> Libellé de la contrainte <span class="tip">(optionnel)</span></label>
+          <input id="lbl-${i}" type="text" placeholder="ex : Heures machine, demande minimale..." value="${esc(prevLbl)}">
+        </div>
+        <div class="eq-preview" id="eq-preview-${i}">…</div>
+      </div>`;
+  }
+  $('cst-wrap').innerHTML=cstHtml;
+  updatePreviews();
+}
+
+function updatePreviews(){
+  const n=DIM.n,m=DIM.m;
+  const sense = $('pb-sense')?.value || 'max';
+  const zSymbol = sense==='max' ? 'Max Z' : 'Min Z';
+
+  const terms=[];
+  for(let j=0;j<n;j++){
+    const v=$(`c-${j}`)?.value || '?';
+    const name=$(`vname-${j}`)?.value?.trim() || `x${j+1}`;
+    terms.push(`<span class="hl">${esc(v)}</span>·${esc(name)}`);
+  }
+  $('obj-preview').innerHTML = `${zSymbol} = ${terms.join(' + ') || '…'}`;
+
+  for(let i=0;i<m;i++){
+    const parts=[];
+    for(let j=0;j<n;j++){
+      const a=$(`a-${i}-${j}`)?.value || '?';
+      const name=$(`vname-${j}`)?.value?.trim() || `x${j+1}`;
+      parts.push(`<span class="hl2">${esc(a)}</span>·${esc(name)}`);
+    }
+    const t=$(`type-${i}`)?.value || '≤';
+    const b=$(`b-${i}`)?.value || '?';
+    const el=$(`eq-preview-${i}`);
+    if(el) el.innerHTML = `${parts.join(' + ')} ${esc(t)} <span class="hl">${esc(b)}</span>`;
+  }
+}
+
+function collectProblem(){
+  const n=DIM.n,m=DIM.m;
+  const name=$('pb-name').value.trim();
+  if(!name) throw new Error('Veuillez donner un nom au problème.');
+  const sens=$('pb-sense').value;
+  const unit=$('pb-unit').value.trim() || 'F CFA';
+
+  const varLabels=[];
+  for(let j=0;j<n;j++) varLabels.push(($(`vname-${j}`)?.value?.trim()) || `x${j+1}`);
+
+  const c=[];
+  for(let j=0;j<n;j++){
+    const v=parseFloat($(`c-${j}`)?.value);
+    if(!Number.isFinite(v)) throw new Error(`Coefficient c${j+1} invalide.`);
+    c.push(v);
+  }
+  if(c.every(v=>Math.abs(v)<EPS)) throw new Error('La fonction objectif ne peut pas être nulle partout.');
+
+  const A=[], b=[], type=[], lbls=[];
+  for(let i=0;i<m;i++){
+    const row=[];
+    for(let j=0;j<n;j++){
+      const v=parseFloat($(`a-${i}-${j}`)?.value);
+      if(!Number.isFinite(v)) throw new Error(`Coefficient a${i+1}${j+1} invalide.`);
+      row.push(v);
+    }
+    if(row.every(v=>Math.abs(v)<EPS)) throw new Error(`La contrainte ${i+1} est vide : tous les coefficients sont nuls.`);
+    const bi=parseFloat($(`b-${i}`)?.value);
+    if(!Number.isFinite(bi)) throw new Error(`Second membre b${i+1} invalide.`);
+    A.push(row);
+    b.push(bi);
+    type.push($(`type-${i}`)?.value || '<=');
+    lbls.push($(`lbl-${i}`)?.value?.trim() || `Contrainte ${i+1}`);
+  }
+
+  return {name,n,m,c,A,b,type,lbls,varLabels,unit,sens};
+}
+
+function submitProblem(){
+  $('validation-summary').innerHTML='';
+  try{
+    PROB = collectProblem();
+    solveProblem();
+  }catch(e){
+    $('validation-summary').innerHTML = `<div class="info-box err"><i class="bi bi-x-circle"></i> <b>Erreur :</b> ${esc(e.message)}</div>`;
+    toast(e.message,'err');
+  }
+}
+
+/* ============================================================
+   ROBUST SIMPLEX ENGINE
+============================================================ */
+function normalizeProblem(problem){
+  const p=deepClone(problem);
+  const notes=[];
+  for(let i=0;i<p.m;i++){
+    if(p.b[i] < 0){
+      p.A[i] = p.A[i].map(v => -v);
+      p.b[i] = -p.b[i];
+      if(p.type[i] === '<=') p.type[i] = '>=';
+      else if(p.type[i] === '>=') p.type[i] = '<=';
+      notes.push(`Contrainte ${i+1} normalisée : second membre négatif, multiplication par -1 et inversion du sens.`);
+    }
+  }
+  return {...p, notes};
+}
+
+function buildStandardModel(problem){
+  const vars = Array.from({length:problem.n}, (_,j)=>({name:`x${j+1}`, kind:'decision', longName:problem.varLabels[j]||`Variable ${j+1}`}));
+  const rows = Array.from({length:problem.m}, (_,i)=>Array(problem.n).fill(0).map((_,j)=>problem.A[i][j]));
+  const rhs = [...problem.b];
+  const basis = Array(problem.m).fill(-1);
+  const equations=[];
+  let slackCount=0, surplusCount=0, artCount=0;
+
+  function addColumn(name, kind, longName){
+    rows.forEach(r=>r.push(0));
+    vars.push({name, kind, longName: longName || name});
+    return vars.length - 1;
+  }
+
+  for(let i=0;i<problem.m;i++){
+    const eq={row:i, type:problem.type[i], rhs:problem.b[i], added:[]};
+    if(problem.type[i] === '<='){
+      const idx = addColumn(`e${++slackCount}`,'slack',`Variable d'écart e${slackCount}`);
+      rows[i][idx]=1;
+      basis[i]=idx;
+      eq.added.push({name:vars[idx].name, coef:1, kind:'slack'});
+    } else if(problem.type[i] === '>='){
+      const sIdx = addColumn(`s${++surplusCount}`,'surplus',`Variable de surplus s${surplusCount}`);
+      rows[i][sIdx]=-1;
+      eq.added.push({name:vars[sIdx].name, coef:-1, kind:'surplus'});
+      const aIdx = addColumn(`a${++artCount}`,'artificial',`Variable artificielle a${artCount}`);
+      rows[i][aIdx]=1;
+      basis[i]=aIdx;
+      eq.added.push({name:vars[aIdx].name, coef:1, kind:'artificial'});
+    } else {
+      const aIdx = addColumn(`a${++artCount}`,'artificial',`Variable artificielle a${artCount}`);
+      rows[i][aIdx]=1;
+      basis[i]=aIdx;
+      eq.added.push({name:vars[aIdx].name, coef:1, kind:'artificial'});
+    }
+    equations.push(eq);
+  }
+
+  return {
+    vars, rows, rhs, basis, equations,
+    counts:{slack:slackCount, surplus:surplusCount, artificial:artCount}
+  };
+}
+
+function stateClone(st){
+  return {rows:st.rows.map(r=>r.map(v=>roundClean(v))), rhs:st.rhs.map(v=>roundClean(v)), basis:[...st.basis], vars:st.vars.map(v=>({...v}))};
+}
+
+function computeReducedCosts(state, costs){
+  const m=state.rows.length, n=state.vars.length;
+  const deltas=Array(n).fill(0);
+  let z=0;
+  for(let i=0;i<m;i++){
+    const cb = costs[state.basis[i]] || 0;
+    z += cb * state.rhs[i];
+    for(let j=0;j<n;j++) deltas[j] += cb * state.rows[i][j];
+  }
+  for(let j=0;j<n;j++) deltas[j] = roundClean(deltas[j] - (costs[j] || 0));
+  return {deltas, objective:roundClean(z)};
+}
+
+function chooseEnteringVariable(state, deltas, options={}){
+  const basisSet=new Set(state.basis);
+  const allowedKinds=options.allowedKinds || null;
+  let best=-1, bestVal=-EPS;
+  for(let j=0;j<state.vars.length;j++){
+    if(basisSet.has(j)) continue;
+    if(allowedKinds && !allowedKinds.includes(state.vars[j].kind)) continue;
+    if(deltas[j] < bestVal - EPS){ bestVal=deltas[j]; best=j; }
+    else if(Math.abs(deltas[j]-bestVal)<=EPS && best!==-1 && j<best){ best=j; }
+  }
+  return best;
+}
+
+function chooseLeavingRow(state, entering){
+  let bestRow=-1, bestRatio=Infinity;
+  for(let i=0;i<state.rows.length;i++){
+    const a=state.rows[i][entering];
+    if(a > EPS){
+      const ratio=state.rhs[i]/a;
+      if(ratio < bestRatio - EPS){ bestRatio=ratio; bestRow=i; }
+      else if(Math.abs(ratio-bestRatio)<=EPS && bestRow!==-1 && state.basis[i] < state.basis[bestRow]){ bestRow=i; }
+    }
+  }
+  return {row:bestRow, ratio:bestRatio};
+}
+
+function pivot(state,row,col){
+  const pv=state.rows[row][col];
+  for(let j=0;j<state.vars.length;j++) state.rows[row][j]=roundClean(state.rows[row][j]/pv);
+  state.rhs[row]=roundClean(state.rhs[row]/pv);
+  for(let i=0;i<state.rows.length;i++){
+    if(i===row) continue;
+    const f=state.rows[i][col];
+    if(Math.abs(f)<=EPS) continue;
+    for(let j=0;j<state.vars.length;j++) state.rows[i][j]=roundClean(state.rows[i][j]-f*state.rows[row][j]);
+    state.rhs[i]=roundClean(state.rhs[i]-f*state.rhs[row]);
+  }
+}
+
+function makeSnapshot(state,costs,meta){
+  const calc=computeReducedCosts(state,costs);
+  return {
+    phase:meta.phase, iter:meta.iter, note:meta.note,
+    entering:meta.entering ?? -1,
+    leavingRow:meta.leavingRow ?? -1,
+    leavingName:meta.leavingName || '',
+    pivotValue:meta.pivotValue ?? null,
+    rows:state.rows.map(r=>r.map(v=>roundClean(v))),
+    rhs:state.rhs.map(v=>roundClean(v)),
+    basis:[...state.basis],
+    vars:state.vars.map(v=>({...v})),
+    deltas:calc.deltas,
+    objective:calc.objective,
+    costs:[...costs]
+  };
+}
+
+function runSimplexPhase(state,costs,phase,options={}){
+  const snapshots=[];
+  let iter=0;
+  snapshots.push(makeSnapshot(state,costs,{phase,iter:0,note:options.initialNote || `Tableau initial de ${phase}.`}));
+  while(iter < MAX_ITER){
+    const {deltas,objective}=computeReducedCosts(state,costs);
+    const entering=chooseEnteringVariable(state,deltas,options);
+    if(entering === -1){
+      return {status:'optimal', snapshots, objective, deltas, iterations:iter};
+    }
+    const leaving=chooseLeavingRow(state,entering);
+    if(leaving.row === -1){
+      return {status:'unbounded', snapshots, objective, deltas, iterations:iter, unboundedCol:entering};
+    }
+    const leavingName = state.vars[state.basis[leaving.row]].name;
+    const pv = state.rows[leaving.row][entering];
+    pivot(state, leaving.row, entering);
+    state.basis[leaving.row] = entering;
+    iter++;
+    snapshots.push(makeSnapshot(state,costs,{
+      phase, iter, entering,
+      leavingRow:leaving.row,
+      leavingName,
+      pivotValue:pv,
+      note:`${state.vars[entering].name} entre dans la base, ${leavingName} sort de la base (rapport minimal = ${fmt(leaving.ratio)}).`
+    }));
+  }
+  return {status:'iteration_limit', snapshots, objective:computeReducedCosts(state,costs).objective, deltas:computeReducedCosts(state,costs).deltas, iterations:iter};
+}
+
+function cleanupArtificialBasis(state){
+  const notes=[];
+  for(let i=state.rows.length-1;i>=0;i--){
+    const basicVar = state.vars[state.basis[i]];
+    if(!basicVar || basicVar.kind !== 'artificial') continue;
+    if(Math.abs(state.rhs[i]) > 1e-7) return {infeasible:true, notes};
+    let pivotCol=-1;
+    for(let j=0;j<state.vars.length;j++){
+      if(state.vars[j].kind === 'artificial') continue;
+      if(Math.abs(state.rows[i][j]) > EPS){ pivotCol=j; break; }
+    }
+    if(pivotCol !== -1){
+      pivot(state,i,pivotCol);
+      state.basis[i]=pivotCol;
+      notes.push(`Nettoyage : ${state.vars[pivotCol].name} remplace ${basicVar.name}.`);
+    } else {
+      state.rows.splice(i,1);
+      state.rhs.splice(i,1);
+      state.basis.splice(i,1);
+      notes.push(`Suppression d'une contrainte redondante associée à ${basicVar.name}.`);
+    }
+  }
+  const keep=[], map={}, newVars=[];
+  state.vars.forEach((v,idx)=>{
+    if(v.kind !== 'artificial'){
+      map[idx]=newVars.length;
+      keep.push(idx);
+      newVars.push(v);
+    }
+  });
+  state.rows = state.rows.map(row => keep.map(k => roundClean(row[k])));
+  state.vars = newVars;
+  state.basis = state.basis.map(idx => map[idx]);
+  return {infeasible:false, notes};
+}
+
+function solveRobust(problem){
+  const normalized=normalizeProblem(problem);
+  const standard=buildStandardModel(normalized);
+
+  const initialState={rows:standard.rows.map(r=>[...r]), rhs:[...standard.rhs], basis:[...standard.basis], vars:standard.vars.map(v=>({...v}))};
+  const state=stateClone(initialState);
+
+  const decisionCosts = normalized.sens === 'max' ? [...normalized.c] : normalized.c.map(v => -v);
+  const phase1Costs = state.vars.map(v => v.kind === 'artificial' ? -1 : 0);
+
+  let phase1=null, phase2=null;
+  const cleanupNotes=[];
+
+  if(standard.counts.artificial > 0){
+    phase1 = runSimplexPhase(state, phase1Costs, 'Phase I', {
+      allowedKinds:['decision','slack','surplus'],
+      initialNote:'Phase I : construction d’une base réalisable en maximisant W = -Σ variables artificielles.'
+    });
+    if(phase1.status === 'iteration_limit') return {status:'iteration_limit', message:'Le nombre maximal d’itérations a été atteint en phase I.', normalized, standard, initialState, phase1};
+    if(phase1.status === 'unbounded') return {status:'infeasible', message:'Anomalie de phase I : modèle incohérent.', normalized, standard, initialState, phase1};
+    if(Math.abs(phase1.objective) > 1e-7) return {status:'infeasible', message:'Le problème est infaisable : la phase I n’annule pas toutes les variables artificielles.', normalized, standard, initialState, phase1};
+    const clean = cleanupArtificialBasis(state);
+    cleanupNotes.push(...clean.notes);
+    if(clean.infeasible) return {status:'infeasible', message:'Le problème reste infaisable après nettoyage des artificielles.', normalized, standard, initialState, phase1};
+  }
+
+  const phase2Costs = state.vars.map(v => v.kind === 'decision' ? decisionCosts[Number(v.name.slice(1))-1] : 0);
+  phase2 = runSimplexPhase(state, phase2Costs, 'Phase II', {
+    allowedKinds:['decision','slack','surplus'],
+    initialNote: standard.counts.artificial>0
+      ? 'Phase II : optimisation du problème original à partir de la base réalisable obtenue en phase I.'
+      : 'Phase II : base initiale déjà réalisable, optimisation directe du problème original.'
+  });
+
+  if(phase2.status === 'iteration_limit') return {status:'iteration_limit', message:'Le nombre maximal d’itérations a été atteint en phase II.', normalized, standard, initialState, phase1, phase2, cleanupNotes};
+  if(phase2.status === 'unbounded') return {status:'unbounded', message:'Le problème est non borné : la fonction objectif peut être améliorée sans limite.', normalized, standard, initialState, phase1, phase2, cleanupNotes};
+
+  const finalState=stateClone(state);
+  const finalCalc=computeReducedCosts(finalState, phase2Costs);
+  const values=Object.fromEntries(finalState.vars.map(v=>[v.name,0]));
+  for(let i=0;i<finalState.rows.length;i++) values[finalState.vars[finalState.basis[i]].name] = finalState.rhs[i];
+  const solution=Array.from({length:normalized.n}, (_,j)=>roundClean(values[`x${j+1}`] || 0));
+  const zOpt = normalized.sens === 'max' ? finalCalc.objective : -finalCalc.objective;
+  const nonBasic = new Set(Array.from({length:finalState.vars.length}, (_,j)=>j).filter(j=>!finalState.basis.includes(j)));
+  const multiple = Array.from(nonBasic).some(j => finalState.vars[j].kind==='decision' && Math.abs(finalCalc.deltas[j]) <= 1e-7);
+  const degenerate = finalState.rhs.some(v => Math.abs(v) <= 1e-7);
+  const usage = normalized.A.map((row,i)=>{
+    const lhs = row.reduce((s,a,j)=>s+a*solution[j],0);
+    const rhs = normalized.b[i];
+    const sense = normalized.type[i];
+    const binding = Math.abs(lhs-rhs) <= 1e-6;
+    let residual=0;
+    if(sense==='<=') residual = rhs - lhs;
+    else if(sense==='>=') residual = lhs - rhs;
+    else residual = Math.abs(lhs-rhs);
+    return {label:normalized.lbls[i] || `Contrainte ${i+1}`, lhs:roundClean(lhs), rhs:roundClean(rhs), type:sense, residual:roundClean(residual), binding};
+  });
+  return {status:'optimal', message:'Solution optimale trouvée.', normalized, standard, initialState, phase1, phase2, cleanupNotes, finalState, solution, zOpt:roundClean(zOpt), iterations:(phase1?phase1.iterations:0)+phase2.iterations, multiple, degenerate, usage};
+}
+
+/* ============================================================
+   STEP BUILDING FOR UI
+============================================================ */
+function computeRatiosFromSnapshot(snap, entering){
+  const ratios=[];
+  if(entering == null || entering < 0) return ratios;
+  for(let i=0;i<snap.rows.length;i++){
+    const coef=snap.rows[i][entering];
+    ratios.push({
+      i,
+      varName:snap.vars[snap.basis[i]].name,
+      rhs:snap.rhs[i],
+      coef,
+      ratio: coef > EPS ? snap.rhs[i]/coef : null
+    });
+  }
+  return ratios;
+}
+
+function buildDisplaySteps(res){
+  const steps=[];
+  steps.push({kind:'standard', title:'Mise en forme standard', desc:'Transformation du problème, normalisations éventuelles et construction de la base initiale.'});
+
+  function addPhase(phaseRes, code){
+    if(!phaseRes) return;
+    const snaps=phaseRes.snapshots || [];
+    if(snaps.length){
+      steps.push({kind:'phaseInit', phase:code, snap:snaps[0], title:`${code} — tableau initial`, desc:snaps[0].note});
+      for(let i=1;i<snaps.length;i++){
+        steps.push({
+          kind:'iteration',
+          phase:code,
+          before:snaps[i-1],
+          after:snaps[i],
+          title:`${code} — itération ${snaps[i].iter}`,
+          desc:snaps[i].note
+        });
+      }
+    }
+  }
+
+  addPhase(res.phase1, 'Phase I');
+  if(res.cleanupNotes && res.cleanupNotes.length) steps.push({kind:'cleanup', title:'Nettoyage de la base', notes:res.cleanupNotes});
+  addPhase(res.phase2, 'Phase II');
+
+  if(res.status === 'optimal') steps.push({kind:'final', title:'Solution optimale', desc:res.message});
+  else steps.push({kind:'status', title:'Diagnostic final', desc:res.message});
+  return steps;
+}
+
+/* ============================================================
+   MAIN SOLVE FLOW
+============================================================ */
+function solveProblem(){
+  RES = solveRobust(PROB);
+  STEPS = buildDisplaySteps(RES);
+  CUR = 0;
+  $('prob-label').textContent = PROB.name;
+  $('top-status').innerHTML = topStatusHTML();
+  saveProb();
+  showPage('tableaux');
+  toast(RES.status==='optimal' ? `Résolution terminée — ${RES.iterations} itération(s)` : RES.message, RES.status==='optimal'?'ok':'warn');
+}
+
+function topStatusHTML(){
+  if(!RES) return '';
+  if(RES.status === 'optimal'){
+    return `<div class="info-box ok"><i class="bi bi-check-circle"></i> <b>Statut :</b> solution optimale trouvée — ${PROB.sens==='max'?'Zmax':'Zmin'} = <b>${money(RES.zOpt, PROB.unit)}</b> · ${RES.iterations} itération(s)</div>`;
+  }
+  if(RES.status === 'infeasible') return `<div class="info-box err"><i class="bi bi-x-circle"></i> <b>Statut :</b> problème infaisable — ${esc(RES.message)}</div>`;
+  if(RES.status === 'unbounded') return `<div class="info-box warn"><i class="bi bi-exclamation-triangle"></i> <b>Statut :</b> problème non borné — ${esc(RES.message)}</div>`;
+  return `<div class="info-box warn"><i class="bi bi-exclamation-triangle"></i> <b>Statut :</b> ${esc(RES.message)}</div>`;
+}
+
+function loadExample(){
+  PROB = {
+    name:'Production A & B — Exemple fil rouge',
+    n:2, m:2,
+    c:[310,250],
+    A:[[2,1],[3,2]],
+    b:[240,390],
+    type:['<=','<='],
+    lbls:['Heures de travail','Matières premières'],
+    varLabels:['Produit A','Produit B'],
+    unit:'F CFA',
+    sens:'max'
+  };
+  solveProblem();
+}
+
+/* ============================================================
+   TABLE RENDERING
+============================================================ */
+const THEME_CLS=['t0','t1','t2','t3','t4'];
+const THEME_TH =['th-gray','th-blue','th-orange','th-green','th-purple'];
+function stepTheme(step, idx){
+  if(step.kind==='standard') return 0;
+  if(step.kind==='final' || step.kind==='status') return 4;
+  if(step.kind==='cleanup') return 3;
+  return 1 + (idx % 3);
+}
+
+function buildSnapshotTableHTML(snap, entering=-1, leavingRow=-1, theme='th-blue', highlightRHS=false){
+  const n=snap.vars.length;
+  let h=`<div class="sx-wrap"><table class="sx-table ${theme}"><thead><tr><th>Base</th>`;
+  for(let j=0;j<n;j++) h += `<th>${esc(snap.vars[j].name)}</th>`;
+  h += `<th>RHS</th></tr></thead><tbody>`;
+  for(let i=0;i<snap.rows.length;i++){
+    h += '<tr>';
+    h += `<td class="base-col">${esc(snap.vars[snap.basis[i]].name)}</td>`;
+    for(let j=0;j<n;j++){
+      let cls='';
+      if(i===leavingRow && j===entering) cls='piv';
+      else if(i===leavingRow && leavingRow>=0) cls='pr';
+      else if(j===entering && entering>=0) cls='pc';
+      h += `<td class="${cls}">${esc(frac(snap.rows[i][j]))}</td>`;
+    }
+    h += `<td class="${highlightRHS?'opt-rhs':''}">${esc(frac(snap.rhs[i]))}</td></tr>`;
+  }
+  h += `<tr class="z-row"><td class="base-col">Zj − Cj</td>`;
+  for(let j=0;j<n;j++) h += `<td>${esc(frac(snap.deltas[j]))}</td>`;
+  h += `<td>${esc(frac(snap.objective))}</td></tr>`;
+  h += `</tbody></table></div>`;
+  return h;
+}
+
+function buildRatioHTML(before, entering, leavingRow){
+  const ratios=computeRatiosFromSnapshot(before, entering);
+  let h=`<div style="margin-bottom:14px"><div style="font-size:13px;font-weight:700;color:var(--or);margin-bottom:8px"><i class="bi bi-table"></i> Test du ratio minimal — colonne <b>${esc(before.vars[entering].name)}</b></div><table class="ratio-tbl"><thead><tr><th>Variable de base</th><th>RHS</th><th>Coeff. pivot</th><th>Rapport</th></tr></thead><tbody>`;
+  ratios.forEach(r=>{
+    const ignored = r.ratio === null;
+    const cls = r.i===leavingRow ? 'pr-row' : (ignored ? 'ign-row' : '');
+    const ratioStr = ignored ? '— (coeff. ≤ 0)' : `${frac(r.ratio)}${r.i===leavingRow ? ' ← minimum ★' : ''}`;
+    h += `<tr class="${cls}"><td>${esc(r.varName)}</td><td>${frac(r.rhs)}</td><td>${frac(r.coef)}</td><td><b>${ratioStr}</b></td></tr>`;
+  });
+  h += '</tbody></table></div>';
+  return h;
+}
+
+function renderStandardStep(){
+  const p=PROB, r=RES, nrm=r.normalized, std=r.standard, init=r.initialState;
+  const objOriginal = p.c.map((ci,j)=>`${ci>=0&&j>0?'+ ':''}${ci}·x${j+1}`).join(' ');
+  const objInternal = (p.sens==='max'?p.c:p.c.map(v=>-v)).map((ci,j)=>`${ci>=0&&j>0?'+ ':''}${ci}·x${j+1}`).join(' ');
+  const equations = std.equations.map((eq,i)=>{
+    const lhs = nrm.A[i].map((a,j)=>`${a>=0&&j>0?'+ ':''}${a}·x${j+1}`).join(' ');
+    const extras = eq.added.map(t=>`${t.coef>=0?'+ ':'- '}${Math.abs(t.coef)===1?'':Math.abs(t.coef)}${t.name}`).join(' ');
+    return `${lhs} ${extras} = ${fmt(nrm.b[i])}`;
+  });
+  const initVals = Object.fromEntries(init.vars.map(v=>[v.name,0]));
+  for(let i=0;i<init.rows.length;i++) initVals[init.vars[init.basis[i]].name]=init.rhs[i];
+
+  let html='';
+  if(nrm.notes.length){
+    html += `<div class="info-box warn" style="margin-bottom:12px"><i class="bi bi-exclamation-triangle"></i> <b>Normalisations appliquées :</b><br>${nrm.notes.map(esc).join('<br>')}</div>`;
+  }
+  if(p.sens==='min'){
+    html += `<div class="info-box" style="margin-bottom:12px"><i class="bi bi-info-circle"></i> La minimisation est traitée en interne sous la forme <b>Max(−Z)</b>, puis le résultat final est reconverti en <b>Min Z</b>.</div>`;
+  }
+  html += `<div class="math-block" style="margin-bottom:14px"><b>Fonction objectif saisie</b><br>${p.sens==='max'?'Max':'Min'} Z = ${objOriginal}<br><br><b>Fonction utilisée par l’algorithme</b><br>Max Z' = ${objInternal}</div>`;
+  html += `<div class="info-box" style="margin-bottom:12px"><i class="bi bi-diagram-3"></i> <b>Base initiale :</b> ${std.counts.artificial>0 ? 'présence de variables artificielles → phase I nécessaire.' : 'base directement réalisable avec les variables d’écart.'}</div>`;
+  html += `<div class="math-block" style="margin-bottom:14px"><b>Contraintes standardisées</b><br>${equations.map(esc).join('<br>')}<br>xⱼ, eᵢ, sᵢ, aᵢ ≥ 0</div>`;
+  html += `<div class="card-sm" style="margin-bottom:14px"><div class="section-title" style="margin-bottom:8px">Structure de la base</div><div style="display:flex;flex-wrap:wrap;gap:8px"><span class="tag tag-bl">Écarts : ${std.counts.slack}</span><span class="tag tag-pu">Surplus : ${std.counts.surplus}</span><span class="tag tag-or">Artificielles : ${std.counts.artificial}</span></div></div>`;
+  html += `<div class="section-title" style="margin-bottom:8px">Solution de base initiale</div><div class="sx-wrap"><table class="vtx-table"><thead><tr><th>Variable</th><th>Type</th><th>Valeur initiale</th></tr></thead><tbody>${init.vars.map(v=>`<tr><td>${esc(v.name)}</td><td>${esc(v.kind)}</td><td>${fmt(initVals[v.name]||0)}</td></tr>`).join('')}</tbody></table></div>`;
+  return html;
+}
+
+function buildSolutionHTML(){
+  const step = RES;
+  const {solution,zOpt,usage,multiple,degenerate} = step;
+  const {n,m,varLabels,unit,sens} = PROB;
+  let h=`<div class="result-box"><h3><i class="bi bi-star-fill"></i> Solution optimale</h3><div class="result-grid">`;
+  for(let j=0;j<n;j++){
+    h += `<div class="result-var"><div class="val">${frac(solution[j])}</div><div class="lbl">x${j+1}<br>${esc(varLabels[j]||('Variable '+(j+1)))}</div></div>`;
+  }
+  h += `</div><div class="result-z"><div class="val">${money(zOpt, unit)}</div><div class="lbl">${sens==='max'?'Valeur maximale':'Valeur minimale'} de Z</div></div></div>`;
+
+  h += `<div class="cst-check">`;
+  usage.forEach((u,i)=>{
+    const badgeClass = u.type==='=' ? 'eq' : (u.binding ? 'full' : 'free');
+    const txt = u.type==='=' ? `Égalité : écart ${fmt(u.residual)}` : (u.binding ? 'Contrainte active' : `Marge : ${fmt(u.residual)}`);
+    h += `<div class="cst-row"><i class="bi bi-check-circle-fill ok-ic"></i><span><b>CT${i+1}</b> — ${esc(u.label)} : <b>${fmt(u.lhs)}</b> ${esc(u.type)} <b>${fmt(u.rhs)}</b></span><span class="sat-badge ${badgeClass}">${txt}</span></div>`;
+  });
+  h += `</div>`;
+
+  const nature=[];
+  nature.push(multiple ? 'Optimum multiple possible (au moins une variable hors base possède un coût réduit nul).' : 'Optimum unique détecté.');
+  if(degenerate) nature.push('La base finale est dégénérée : au moins une variable de base est nulle.');
+  h += `<div class="info-box ok"><i class="bi bi-lightbulb-fill"></i> <b>Interprétation :</b> ${sens==='max' ? 'la décision optimale maximise le résultat.' : 'la décision optimale minimise le résultat.'}<br>${nature.map(esc).join('<br>')}</div>`;
+  return h;
+}
+
+function renderDiagnosticHTML(){
+  let html='';
+  if(RES.phase1) html += `<div class="info-box" style="margin-bottom:12px"><i class="bi bi-info-circle"></i> La phase I a été exécutée car le problème ne disposait pas d’une base réalisable immédiate.</div>`;
+  html += `<div class="info-box ${RES.status==='infeasible'?'err':'warn'}"><i class="bi bi-exclamation-triangle"></i> <b>${esc(RES.message)}</b></div>`;
+  const lastPhase = RES.phase2 || RES.phase1;
+  if(lastPhase && lastPhase.snapshots && lastPhase.snapshots.length){
+    const snap = lastPhase.snapshots[lastPhase.snapshots.length-1];
+    html += buildSnapshotTableHTML(snap, -1, -1, 'th-purple', false);
+  }
+  return html;
+}
+
+function renderStep(){
+  if(!STEPS.length) return;
+  const step=STEPS[CUR];
+  const themeIndex=stepTheme(step,CUR);
+
+  let prog='';
+  STEPS.forEach((s,i)=>{
+    if(i>0) prog += `<div class="prog-line ${i<=CUR?'done':''}"></div>`;
+    const label = s.kind==='standard' ? 'S'
+      : s.kind==='final' ? '★'
+      : s.kind==='status' ? '!'
+      : s.kind==='cleanup' ? 'N'
+      : String(i);
+    const cls = i<CUR ? 'done' : i===CUR ? 'active' : '';
+    prog += `<div class="prog-dot ${cls}" onclick="gotoStep(${i})" title="${esc(s.title)}">${label}</div>`;
+  });
+  $('prog-wrap').innerHTML=prog;
+
+  let html=`<div class="step-header ${THEME_CLS[themeIndex]}"><div class="step-num">${step.kind==='final'?'★':step.kind==='status'?'!':step.kind==='standard'?'S':(CUR)}</div><div><div class="step-title">${esc(step.title)}</div><div class="step-desc">${esc(step.desc||'')}</div></div></div>`;
+
+  if(step.kind==='standard'){
+    html += renderStandardStep();
+  } else if(step.kind==='phaseInit'){
+    html += `<div class="info-box" style="margin-bottom:12px"><i class="bi bi-play-circle"></i> <b>${esc(step.phase)}</b> — tableau de départ.</div>`;
+    html += buildSnapshotTableHTML(step.snap, -1, -1, THEME_TH[themeIndex], false);
+  } else if(step.kind==='iteration'){
+    html += `<div style="font-size:13px;font-weight:700;color:var(--bl);margin-bottom:8px"><i class="bi bi-arrow-right-circle"></i> Avant pivotage — ${esc(step.before.vars[step.after.entering].name)} candidate à l'entrée</div>`;
+    html += buildSnapshotTableHTML(step.before, step.after.entering, step.after.leavingRow, THEME_TH[themeIndex], false);
+    html += buildRatioHTML(step.before, step.after.entering, step.after.leavingRow);
+    html += `<div class="info-box" style="margin-bottom:12px"><i class="bi bi-calculator"></i> <b>Pivot :</b> ${esc(step.after.leavingName)} sort, ${esc(step.after.vars[step.after.entering].name)} entre, valeur pivot = <b>${frac(step.after.pivotValue)}</b>.</div>`;
+    html += `<div style="font-size:13px;font-weight:700;color:var(--gn2);margin-bottom:8px"><i class="bi bi-check2-circle"></i> Après pivotage</div>`;
+    html += buildSnapshotTableHTML(step.after, -1, -1, THEME_TH[(themeIndex%4)+1], false);
+    const neg = step.after.deltas.filter(v=>v < -1e-7);
+    html += `<div class="info-box ${neg.length?'warn':'ok'}" style="margin-top:10px"><i class="bi bi-${neg.length?'exclamation-triangle':'check-circle'}"></i> ${neg.length ? 'Des coefficients de la ligne Zj − Cj restent négatifs : on poursuit les itérations.' : 'Tous les coefficients de la ligne Zj − Cj sont désormais non négatifs : condition d’arrêt vérifiée.'}</div>`;
+  } else if(step.kind==='cleanup'){
+    html += `<div class="info-box ok"><i class="bi bi-wrench-adjustable-circle"></i> <b>Nettoyage de la base après phase I</b><br>${step.notes.map(esc).join('<br>')}</div>`;
+  } else if(step.kind==='final'){
+    const lastSnap = RES.phase2 ? RES.phase2.snapshots[RES.phase2.snapshots.length-1] : (RES.phase1 ? RES.phase1.snapshots[RES.phase1.snapshots.length-1] : null);
+    if(lastSnap) html += buildSnapshotTableHTML(lastSnap, -1, -1, 'th-green', true);
+    html += buildSolutionHTML();
+  } else if(step.kind==='status'){
+    html += renderDiagnosticHTML();
+  }
+
+  $('step-content').innerHTML = html;
+  $('btnPrev').disabled = CUR===0;
+  $('btnPrev').style.opacity = CUR===0?'.4':'1';
+  $('btnNext').style.display = CUR===STEPS.length-1?'none':'';
+  $('btnSkip').style.display = CUR===STEPS.length-1?'none':'';
+  $('btnGraph').style.display = (PROB && PROB.n===2 && RES && RES.status==='optimal') ? '' : 'none';
+}
+
+function gotoStep(i){ CUR=i; renderStep(); }
+function nextStep(){ if(CUR < STEPS.length-1){ CUR++; renderStep(); } }
+function prevStep(){ if(CUR > 0){ CUR--; renderStep(); } }
+function skipToEnd(){ CUR=STEPS.length-1; renderStep(); }
+
+/* ============================================================
+   GRAPH RENDERING (CANVAS — OFFLINE FRIENDLY)
+============================================================ */
+function satisfiesConstraint(lhs,type,rhs){
+  if(type==='<=') return lhs <= rhs + 1e-7;
+  if(type==='>=') return lhs >= rhs - 1e-7;
+  return Math.abs(lhs-rhs) <= 1e-7;
+}
+
+function getFeasibleVertices(problem){
+  const candidates=[[0,0]];
+  const boundaries = [...problem.A.map((row,i)=>({a:row[0], c:row[1], d:problem.b[i], label:`C${i+1}`})), {a:1,c:0,d:0}, {a:0,c:1,d:0}];
+  for(let i=0;i<boundaries.length;i++){
+    for(let k=i+1;k<boundaries.length;k++){
+      const L1=boundaries[i], L2=boundaries[k];
+      const det=L1.a*L2.c - L1.c*L2.a;
+      if(Math.abs(det)<=EPS) continue;
+      const x=(L1.d*L2.c - L1.c*L2.d)/det;
+      const y=(L1.a*L2.d - L1.d*L2.a)/det;
+      if(x < -1e-7 || y < -1e-7) continue;
+      candidates.push([roundClean(x), roundClean(y)]);
+    }
+  }
+  const uniq=[];
+  for(const pt of candidates){ if(!uniq.some(q=>Math.abs(q[0]-pt[0])<1e-6 && Math.abs(q[1]-pt[1])<1e-6)) uniq.push(pt); }
+  const feas = uniq.filter(([x,y]) => problem.A.every((row,i)=>satisfiesConstraint(row[0]*x + row[1]*y, problem.type[i], problem.b[i])));
+  if(feas.length<=1) return feas;
+  const cx=feas.reduce((s,p)=>s+p[0],0)/feas.length;
+  const cy=feas.reduce((s,p)=>s+p[1],0)/feas.length;
+  feas.sort((p1,p2)=>Math.atan2(p1[1]-cy,p1[0]-cx)-Math.atan2(p2[1]-cy,p2[0]-cx));
+  return feas;
+}
+
+function linePointsInBox(a,c,d,xMax,yMax){
+  const pts=[];
+  function add(x,y){ if(!Number.isFinite(x)||!Number.isFinite(y)) return; if(x<-1e-6||y<-1e-6||x>xMax+1e-6||y>yMax+1e-6) return; if(!pts.some(p=>Math.abs(p[0]-x)<1e-6&&Math.abs(p[1]-y)<1e-6)) pts.push([x,y]); }
+  if(Math.abs(c)>EPS){ add(0,d/c); add(xMax,(d-a*xMax)/c); }
+  if(Math.abs(a)>EPS){ add(d/a,0); add((d-c*yMax)/a,yMax); }
+  return pts.slice(0,2);
+}
+
+function niceStep(max){ const raw=max/5; const mag=Math.pow(10,Math.floor(Math.log10(raw||1))); const norm=raw/mag; if(norm<=1)return mag; if(norm<=2)return 2*mag; if(norm<=5)return 5*mag; return 10*mag; }
+
+function renderGraph(){
+  $('graph-label').textContent = PROB.name;
+  const body=$('graph-body');
+  if(PROB.n !== 2 || RES.status !== 'optimal'){
+    body.innerHTML = `<div class="graph-disabled"><i class="bi bi-bar-chart-line" style="font-size:36px;color:var(--am);margin-bottom:12px;display:block"></i><b>Graphique indisponible.</b><br><span class="text-sm muted">La visualisation exige une solution optimale et exactement 2 variables.</span></div>`;
+    return;
+  }
+
+  const p=RES.normalized;
+  const sol=RES.solution;
+  const verts=getFeasibleVertices(p);
+  const xs=verts.map(v=>v[0]).concat(sol[0],0), ys=verts.map(v=>v[1]).concat(sol[1],0);
+  p.A.forEach((row,i)=>{ if(row[0]>EPS) xs.push(p.b[i]/row[0]); if(row[1]>EPS) ys.push(p.b[i]/row[1]); });
+  const xMax=Math.max(10,Math.ceil((Math.max(...xs,1)*1.35)/5)*5);
+  const yMax=Math.max(10,Math.ceil((Math.max(...ys,1)*1.35)/5)*5);
+
+  body.innerHTML = `<div class="canvas-card" style="margin-bottom:14px"><canvas id="graphCanvas" width="840" height="560"></canvas></div>`;
+  const tableCard=document.createElement('div');
+  tableCard.className='card-sm';
+  const optZ = RES.zOpt;
+  const vRows = verts.map(v=>({x:v[0],y:v[1],Z:PROB.c[0]*v[0]+PROB.c[1]*v[1]})).sort((a,b)=>b.Z-a.Z);
+  tableCard.innerHTML = `<div class="section-title" style="margin-bottom:10px">Comparaison des sommets réalisables</div><table class="vtx-table"><thead><tr><th>Sommet</th><th>x₁</th><th>x₂</th><th>Z</th><th>Statut</th></tr></thead><tbody>${vRows.map(v=>`<tr class="${Math.abs(v.Z-optZ)<=1e-6?'opt-row':''}"><td>(${frac(v.x)}, ${frac(v.y)})</td><td>${frac(v.x)}</td><td>${frac(v.y)}</td><td>${money(v.Z,PROB.unit)}</td><td>${Math.abs(v.Z-optZ)<=1e-6?'★ Optimal':'Réalisable'}</td></tr>`).join('')}</tbody></table><div class="graph-note">Zone verte : ensemble faisable · droites : frontières des contraintes · point orange : optimum.</div>`;
+  body.appendChild(tableCard);
+
+  const canvas=$('graphCanvas');
+  const ctx=canvas.getContext('2d');
+  const W=canvas.width,H=canvas.height;
+  const PAD={top:24,right:28,bottom:54,left:58};
+  const X=x=>PAD.left + (x/xMax)*(W-PAD.left-PAD.right);
+  const Y=y=>H-PAD.bottom - (y/yMax)*(H-PAD.top-PAD.bottom);
+  ctx.clearRect(0,0,W,H);
+  ctx.fillStyle='#fff'; ctx.fillRect(0,0,W,H);
+
+  ctx.strokeStyle='#e2e8f0'; ctx.lineWidth=1;
+  const sx=niceStep(xMax), sy=niceStep(yMax);
+  for(let x=0;x<=xMax;x+=sx){ ctx.beginPath(); ctx.moveTo(X(x),Y(0)); ctx.lineTo(X(x),Y(yMax)); ctx.stroke(); }
+  for(let y=0;y<=yMax;y+=sy){ ctx.beginPath(); ctx.moveTo(X(0),Y(y)); ctx.lineTo(X(xMax),Y(y)); ctx.stroke(); }
+
+  ctx.fillStyle='rgba(239,68,68,0.08)';
+  ctx.fillRect(PAD.left,PAD.top,W-PAD.left-PAD.right,H-PAD.top-PAD.bottom);
+
+  if(verts.length>=3){
+    ctx.beginPath(); ctx.moveTo(X(verts[0][0]),Y(verts[0][1]));
+    verts.slice(1).forEach(pt=>ctx.lineTo(X(pt[0]),Y(pt[1])));
+    ctx.closePath();
+    ctx.fillStyle='rgba(34,197,94,0.18)'; ctx.fill();
+    ctx.strokeStyle='rgba(34,197,94,0.85)'; ctx.lineWidth=2.5; ctx.stroke();
+  }
+
+  ctx.strokeStyle='#64748b'; ctx.lineWidth=1.2;
+  ctx.beginPath(); ctx.moveTo(X(0),Y(0)); ctx.lineTo(X(xMax),Y(0)); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(X(0),Y(0)); ctx.lineTo(X(0),Y(yMax)); ctx.stroke();
+
+  ctx.fillStyle='#64748b'; ctx.font='11px Inter,sans-serif'; ctx.textAlign='center';
+  for(let x=0;x<=xMax;x+=sx) ctx.fillText(fmt(x),X(x),Y(0)+16);
+  ctx.textAlign='right';
+  for(let y=0;y<=yMax;y+=sy) ctx.fillText(fmt(y),X(0)-8,Y(y)+4);
+
+  ctx.fillStyle='#111827'; ctx.font='bold 12px Inter,sans-serif'; ctx.textAlign='center';
+  ctx.fillText(`x₁ (${PROB.varLabels[0]||'Variable 1'})`, X(xMax/2), Y(0)+38);
+  ctx.save(); ctx.translate(18,Y(yMax/2)); ctx.rotate(-Math.PI/2); ctx.fillText(`x₂ (${PROB.varLabels[1]||'Variable 2'})`,0,0); ctx.restore();
+
+  const colors=['#3b82f6','#8b5cf6','#f97316','#ef4444','#14b8a6','#f59e0b'];
+  p.A.forEach((row,i)=>{
+    const pts=linePointsInBox(row[0],row[1],p.b[i],xMax,yMax); if(pts.length<2) return;
+    const col=colors[i%colors.length];
+    ctx.strokeStyle=col; ctx.lineWidth=2; ctx.setLineDash([7,4]);
+    ctx.beginPath(); ctx.moveTo(X(pts[0][0]),Y(pts[0][1])); ctx.lineTo(X(pts[1][0]),Y(pts[1][1])); ctx.stroke(); ctx.setLineDash([]);
+    const mx=(pts[0][0]+pts[1][0])/2, my=(pts[0][1]+pts[1][1])/2;
+    ctx.fillStyle=col; ctx.font='bold 10px Inter,sans-serif'; ctx.fillText(`C${i+1}`,X(mx),Y(my)-8);
+  });
+
+  const c1=PROB.c[0], c2=PROB.c[1], z=RES.zOpt;
+  const iso=linePointsInBox(c1,c2,z,xMax,yMax);
+  if(iso.length>=2){
+    ctx.strokeStyle='#2563eb'; ctx.lineWidth=2.2; ctx.setLineDash([10,5]);
+    ctx.beginPath(); ctx.moveTo(X(iso[0][0]),Y(iso[0][1])); ctx.lineTo(X(iso[1][0]),Y(iso[1][1])); ctx.stroke(); ctx.setLineDash([]);
+  }
+
+  ctx.fillStyle='#f97316';
+  verts.forEach(pt=>{ ctx.beginPath(); ctx.arc(X(pt[0]),Y(pt[1]),5,0,2*Math.PI); ctx.fill(); });
+  ctx.beginPath(); ctx.arc(X(sol[0]),Y(sol[1]),8,0,2*Math.PI); ctx.fillStyle='#ea580c'; ctx.fill(); ctx.strokeStyle='#fff'; ctx.lineWidth=2; ctx.stroke();
+  ctx.fillStyle='#111827'; ctx.font='bold 11px Inter,sans-serif'; ctx.textAlign='left';
+  ctx.fillText(`Optimum (${fmt(sol[0])}, ${fmt(sol[1])})`, X(sol[0])+10, Y(sol[1])-8);
+}
+
+/* ============================================================
+   STORAGE
+============================================================ */
+function saveProb(){
+  try{
+    let s=JSON.parse(localStorage.getItem(STORE)||'[]');
+    const d={...PROB, date:new Date().toLocaleDateString('fr-FR')};
+    s=s.filter(x=>x.name!==PROB.name);
+    s.unshift(d);
+    localStorage.setItem(STORE, JSON.stringify(s.slice(0,10)));
+  }catch{}
+}
+function loadSaved(){ try{return JSON.parse(localStorage.getItem(STORE)||'[]');}catch{return [];} }
+function renderSaved(){
+  const saved=loadSaved();
+  $('saved-list').innerHTML = saved.length ? saved.map((s,i)=>`
+    <div class="saved-item" onclick="restoreProb(${i})"><div><b>${esc(s.name)}</b><div class="muted text-sm">${s.sens==='max'?'Max':'Min'} · ${s.n}×${s.m} · ${esc(s.date||'')}</div></div><i class="bi bi-arrow-right-circle muted saved-arrow"></i></div>`).join('') : '<span class="empty">Aucun problème sauvegardé.</span>';
+}
+function restoreProb(i){ const saved=loadSaved(); if(!saved[i]) return; PROB=deepClone(saved[i]); solveProblem(); }
+function resetModule(){
+  if(!confirm('Réinitialiser le module et effacer l’historique ?')) return;
+  localStorage.removeItem(STORE);
+  PROB=null; RES=null; STEPS=[]; CUR=0; DIM={n:2,m:2};
+  $('dim-n').textContent='2'; $('dim-m').textContent='2';
+  showPage('home'); rebuildForm(); toast('Module réinitialisé');
+}
+
+/* ============================================================
+   INIT
+============================================================ */
+document.addEventListener('DOMContentLoaded', ()=>{
+  renderSaved();
+  rebuildForm();
+  $('pb-name').value='Production A & B — Exemple fil rouge';
+  $('pb-unit').value='F CFA';
+  setTimeout(()=>{
+    const fills={
+      'vname-0':'Produit A','vname-1':'Produit B',
+      'c-0':'310','c-1':'250',
+      'a-0-0':'2','a-0-1':'1','b-0':'240','lbl-0':'Heures de travail',
+      'a-1-0':'3','a-1-1':'2','b-1':'390','lbl-1':'Matières premières'
+    };
+    Object.entries(fills).forEach(([id,val])=>{ const el=$(id); if(el) el.value=val; });
+    updatePreviews();
+  },50);
+});
+</script>
+</body>
+</html>

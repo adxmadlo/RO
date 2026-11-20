@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <title>Gestion de Production — Programmation Dynamique</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/cytoscape@3.28.1/dist/cytoscape.min.js"></script>
+  <style>
+    :root {
+      --bg: #f8fafc;
+      --w: #fff;
+      --b: #e5e7eb;
+      --b2: #cbd5e1;
+      --t: #111827;
+      --mu: #64748b;
+      --mu2: #94a3b8;
+      --bl: #3b82f6;
+      --bl2: #2563eb;
+      --gn: #22c55e;
+      --gn2: #16a34a;
+      --or: #f97316;
+      --or2: #ea580c;
+      --pu: #8b5cf6;
+      --pu2: #6d28d9;
+      --rd: #ef4444;
+      --am: #f59e0b;
+      --shadow: 0 18px 45px rgba(15, 23, 42, .08);
+      --r: 14px;
+      --font: Inter, Segoe UI, system-ui, -apple-system, sans-serif
+    }
+
+    * {
+      box-sizing: border-box
+    }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--t);
+      font-family: var(--font);
+      font-size: 14px
+    }
+
+    .app-nav {
+      height: 58px;
+      background: var(--w);
+      border-bottom: 1px solid var(--b);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 0 18px;
+      position: sticky;
+      top: 0;
+      z-index: 20
+    }
+
+    .nav-ib {
+      width: 34px;
+      height: 34px;
+      border-radius: 10px;
+      border: 1px solid var(--b);
+      background: var(--bg);
+      display: grid;
+      place-items: center;
+      color: var(--mu);
+      text-decoration: none;
+      cursor: pointer
+    }
+
+    .nav-title {
+      font-weight: 850;
+      font-size: 15px
+    }
+
+    .nav-sub {
+      font-size: 11.5px;
+      color: var(--mu)
+    }
+
+    .nav-right {
+      margin-left: auto;
+      display: flex;
+      gap: 8px
+    }
+
+    .page {
+      display: none
+    }
+
+    .page.active {
+      display: block
+    }
+
+    .wrap {
+      max-width: 1120px;
+      margin: auto;
+      padding: 34px 18px 78px
+    }
+
+    .hero-title {
+      font-size: 28px;
+      font-weight: 900;
+      letter-spacing: -.04em
+    }
+
+    .muted {
+      color: var(--mu)
+    }
+
+    .cards {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 18px;
+      margin-top: 26px
+    }
+
+    .choice {
+      background: var(--w);
+      border: 1px solid var(--b);
+      border-radius: 18px;
+      padding: 28px 24px;
+      text-align: center;
+      cursor: pointer;
+      transition: .18s
+    }
+
+    .choice:hover {
+      transform: translateY(-3px);
+      box-shadow: var(--shadow);
+      border-color: var(--pu)
+    }
+
+    .ic {
+      width: 64px;
+      height: 64px;
+      border-radius: 18px;
+      margin: 0 auto 16px;
+      display: grid;
+      place-items: center;
+      color: #fff;
+      font-size: 27px
+    }
+
+    .ic.ex {
+      background: linear-gradient(135deg, var(--pu), var(--pu2))
+    }
+
+    .ic.cu {
+      background: linear-gradient(135deg, var(--or), var(--or2))
+    }
+
+    .saved-item {
+      background: var(--w);
+      border: 1px solid var(--b);
+      border-radius: 12px;
+      padding: 12px 15px;
+      margin-bottom: 8px;
+      display: flex;
+      justify-content: space-between;
+      cursor: pointer
+    }
+
+    .saved-item:hover {
+      border-color: var(--pu);
+      background: #faf5ff
+    }
+
+    .form-card,
+    .panel {
+      background: var(--w);
+      border: 1px solid var(--b);
+      border-radius: var(--r);
+      padding: 20px;
+      margin-bottom: 16px
+    }
+
+    .form-title {
+      font-weight: 900;
+      margin-bottom: 14px;
+      display: flex;
+      gap: 8px
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px
+    }
+
+    .grid4 {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px
+    }
+
+    .fg {
+      display: flex;
+      flex-direction: column;
+      gap: 6px
+    }
+
+    .fl {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: .4px;
+      font-weight: 800;
+      color: var(--mu)
+    }
+
+    .fl span {
+      color: var(--rd)
+    }
+
+    input {
+      width: 100%;
+      border: 1px solid var(--b2);
+      border-radius: 10px;
+      padding: 10px 11px;
+      background: var(--w);
+      color: var(--t);
+      outline: none
+    }
+
+    input:focus {
+      border-color: var(--pu);
+      box-shadow: 0 0 0 3px rgba(139, 92, 246, .13)
+    }
+
+    .mini-grid {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap
+    }
+
+    .mini {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      align-items: center;
+      min-width: 82px
+    }
+
+    .mini label {
+      font-size: 11px;
+      font-weight: 800;
+      color: var(--mu)
+    }
+
+    .mini input {
+      text-align: center;
+      font-family: ui-monospace, monospace
+    }
+
+    .result-box {
+      text-align: center;
+      background: linear-gradient(135deg, #ede9fe, #faf5ff);
+      border: 1px solid #c4b5fd;
+      border-radius: 18px;
+      padding: 24px;
+      margin-bottom: 16px
+    }
+
+    .result-box .v {
+      font-size: 42px;
+      font-weight: 950;
+      color: var(--pu2)
+    }
+
+    .res-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px
+    }
+
+    .plan-step {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: var(--bg);
+      border: 1px solid var(--b);
+      border-radius: 12px;
+      padding: 12px;
+      margin-bottom: 8px
+    }
+
+    .mois {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: var(--pu);
+      color: #fff;
+      display: grid;
+      place-items: center;
+      font-weight: 900
+    }
+
+    .cost {
+      margin-left: auto;
+      color: var(--pu);
+      font-weight: 900;
+      font-family: ui-monospace, monospace
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse
+    }
+
+    th,
+    td {
+      padding: 9px 11px;
+      border-bottom: 1px solid var(--b);
+      font-size: 12.5px
+    }
+
+    th {
+      color: var(--mu);
+      text-transform: uppercase;
+      font-size: 10.5px;
+      background: var(--bg);
+      text-align: left
+    }
+
+    .opt td {
+      background: #f5f3ff
+    }
+
+    .total td {
+      font-weight: 900;
+      background: #ede9fe
+    }
+
+    .graph-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px
+    }
+
+    #cy-prod {
+      height: 470px;
+      background: var(--w);
+      border: 1px solid var(--b);
+      border-radius: 14px;
+      overflow: hidden
+    }
+
+    .legend {
+      display: flex;
+      gap: 14px;
+      flex-wrap: wrap;
+      margin-top: 10px
+    }
+
+    .li {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+      color: var(--mu);
+      font-size: 11px
+    }
+
+    .line {
+      width: 24px;
+      height: 4px;
+      border-radius: 4px
+    }
+
+    .btn {
+      display: inline-flex;
+      gap: 6px;
+      align-items: center;
+      border: 1px solid var(--b2);
+      background: var(--w);
+      color: var(--t);
+      padding: 8px 14px;
+      border-radius: 10px;
+      font-weight: 800;
+      font-size: 12.5px;
+      cursor: pointer;
+      text-decoration: none
+    }
+
+    .btn:hover {
+      background: var(--bg)
+    }
+
+    .btn-sm {
+      padding: 6px 10px;
+      font-size: 12px
+    }
+
+    .btn-pu {
+      background: var(--pu);
+      border-color: var(--pu);
+      color: #fff
+    }
+
+    .btn-or {
+      background: var(--or);
+      border-color: var(--or);
+      color: #fff
+    }
+
+    .btn-rd {
+      background: var(--rd);
+      border-color: var(--rd);
+      color: #fff
+    }
+
+    .btn-gh {
+      border-color: transparent;
+      background: transparent;
+      color: var(--mu)
+    }
+
+    .status {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 38px;
+      background: var(--w);
+      border-top: 1px solid var(--b);
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      padding: 0 18px;
+      color: var(--mu);
+      font-size: 11px
+    }
+
+    .sd {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--mu)
+    }
+
+    .sd.ok {
+      background: var(--gn)
+    }
+
+    .sd.run {
+      background: var(--am);
+      animation: pulse .8s infinite
+    }
+
+    .sd.dn {
+      background: var(--pu)
+    }
+
+    @keyframes pulse {
+      50% {
+        opacity: .35
+      }
+    }
+
+    #toast {
+      position: fixed;
+      right: 18px;
+      bottom: 48px;
+      background: #111827;
+      color: #fff;
+      border-radius: 12px;
+      padding: 11px 15px;
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      opacity: 0;
+      transform: translateY(8px);
+      transition: .2s;
+      z-index: 1000;
+      font-size: 12.5px
+    }
+
+    #toast.show {
+      opacity: 1;
+      transform: none
+    }
+
+    .empty {
+      color: var(--mu);
+      font-style: italic;
+      font-size: 12px
+    }
+
+    @media(max-width:850px) {
+
+      .cards,
+      .grid,
+      .grid4,
+      .res-grid {
+        grid-template-columns: 1fr
+      }
+
+      .nav-sub {
+        display: none
+      }
+
+      #cy-prod {
+        height: 420px
+      }
+
+      .plan-step {
+        align-items: flex-start
+      }
+
+      .cost {
+        margin-left: 0
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <nav class="app-nav"><a class="nav-ib" href="index.html"><i class="bi bi-house"></i></a><button class="nav-ib"
+      id="back" onclick="showPage('home')" style="display:none"><i class="bi bi-arrow-left"></i></button>
+    <div>
+      <div id="nt" class="nav-title">Gestion de Production</div>
+      <div id="ns" class="nav-sub">Programmation dynamique — plus court chemin dans le graphe des états</div>
+    </div>
+    <div class="nav-right"><button class="btn btn-pu btn-sm" id="solveBtn" onclick="solve()" style="display:none"><i
+          class="bi bi-play-fill"></i> Recalculer</button><button class="btn btn-gh btn-sm" onclick="resetModule()"><i
+          class="bi bi-trash3"></i> Reset</button></div>
+  </nav>
+  <div id="page-home" class="page active">
+    <div class="wrap">
+      <div class="hero-title">Gestion de Production</div>
+      <p class="muted">Minimiser fabrication + stockage avec programmation dynamique.</p>
+      <div class="cards">
+        <div class="choice" onclick="loadExample()">
+          <div class="ic ex"><i class="bi bi-book-half"></i></div>
+          <h3>Exemple du cours</h3>
+          <p class="muted">Canapés — 4 mois, demandes [2,4,5,3].</p>
+        </div>
+        <div class="choice" onclick="showPage('create')">
+          <div class="ic cu"><i class="bi bi-gear-fill"></i></div>
+          <h3>Nouveau problème</h3>
+          <p class="muted">Commandes, capacités, coûts de fabrication et de stockage.</p>
+        </div>
+      </div>
+      <div class="mt-4">
+        <h6 class="muted"><i class="bi bi-clock-history"></i> Problèmes récents</h6>
+        <div id="saved-list"><span class="empty">Aucun problème sauvegardé.</span></div>
+      </div>
+    </div>
+  </div>
+  <div id="page-create" class="page">
+    <div class="wrap">
+      <div class="form-card">
+        <div class="form-title"><i class="bi bi-pencil-square"></i>Informations</div>
+        <div class="grid">
+          <div class="fg"><label class="fl">Nom <span>*</span></label><input id="pb-name" maxlength="60"
+              placeholder="Production T1"></div>
+          <div class="fg"><label class="fl">Nombre de mois <span>*</span></label><input id="pb-n" type="number" min="2"
+              max="12" value="4" oninput="updateDemandFields()"></div>
+        </div>
+      </div>
+      <div class="form-card">
+        <div class="form-title"><i class="bi bi-calendar3"></i>Demandes mensuelles</div>
+        <div id="demand-grid" class="mini-grid"></div>
+      </div>
+      <div class="form-card">
+        <div class="form-title"><i class="bi bi-sliders"></i>Contraintes</div>
+        <div class="grid4">
+          <div class="fg"><label class="fl">Production max <span>*</span></label><input id="pmax" type="number" min="1"
+              value="5" oninput="updateCostFields()"></div>
+          <div class="fg"><label class="fl">Stock max <span>*</span></label><input id="smax" type="number" min="0"
+              value="3"></div>
+          <div class="fg"><label class="fl">Stock initial</label><input id="s0" type="number" min="0" value="0"></div>
+          <div class="fg"><label class="fl">Stock final</label><input id="sf" type="number" min="0" value="0"></div>
+          <div class="fg"><label class="fl">Coût stockage</label><input id="cs" type="number" min="0" value="30"></div>
+        </div>
+      </div>
+      <div class="form-card">
+        <div class="form-title"><i class="bi bi-cash-coin"></i>Coûts de fabrication c(p)</div>
+        <div id="cost-grid" class="mini-grid"></div>
+      </div><button class="btn btn-pu" onclick="submitProblem()"><i class="bi bi-check-lg"></i> Créer et
+        résoudre</button> <button class="btn btn-gh" onclick="showPage('home')">Annuler</button>
+    </div>
+  </div>
+  <div id="page-results" class="page">
+    <div class="wrap">
+      <div class="result-box">
+        <div id="r-cost" class="v">—</div>
+        <div class="muted">Coût total optimal</div>
+      </div>
+      <div class="res-grid">
+        <div class="panel">
+          <h5 style="font-weight:900"><i class="bi bi-calendar-check"></i> Plan optimal</h5>
+          <div id="r-plan"></div>
+        </div>
+        <div class="panel">
+          <h5 style="font-weight:900"><i class="bi bi-chat-text"></i> Interprétation</h5>
+          <div id="r-interp" style="line-height:1.75"></div>
+        </div>
+      </div>
+      <div class="panel">
+        <h5 style="font-weight:900"><i class="bi bi-table"></i> Tableau mensuel</h5>
+        <div style="overflow:auto">
+          <table>
+            <thead>
+              <tr>
+                <th>Mois</th>
+                <th>Stock début</th>
+                <th>Demande</th>
+                <th>Production</th>
+                <th>Stock fin</th>
+                <th>Fab.</th>
+                <th>Stock.</th>
+                <th>Total</th>
+              </tr>
+            </thead>
+            <tbody id="r-table"></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="graph-head">
+          <h5 style="font-weight:900;margin:0"><i class="bi bi-diagram-3"></i> Graphe des états</h5>
+          <div><button class="btn btn-sm btn-gh" onclick="if(cy)cy.fit(undefined,30)"><i
+                class="bi bi-arrows-fullscreen"></i></button><button class="btn btn-sm btn-pu"
+              onclick="renderGraph()"><i class="bi bi-arrow-repeat"></i></button><button class="btn btn-sm btn-or"
+              onclick="exportGraphPNG()"><i class="bi bi-download"></i> PNG</button></div>
+        </div>
+        <div id="cy-prod"></div>
+        <div class="legend"><span class="li"><i class="line" style="background:#cbd5e1"></i>Arc valide</span><span
+            class="li"><i class="line" style="background:var(--pu)"></i>Chemin optimal</span><span class="li"><i
+              class="line" style="background:var(--rd)"></i>Non atteignable</span></div>
+      </div>
+      <div class="panel">
+        <h5 style="font-weight:900"><i class="bi bi-grid-3x3"></i> Tableau Bellman</h5>
+        <div style="overflow:auto">
+          <table>
+            <thead>
+              <tr id="bell-head"></tr>
+            </thead>
+            <tbody id="bell-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="status"><i id="sd" class="sd"></i><span id="st">Prêt</span><span style="margin-left:auto">d(t,s)=min coût
+      — fabrication + stockage</span></div>
+  <div id="toast"></div>
+  <script>
+    'use strict';
+    const STORE = 'ro_gp_probs_v2'; let PROB = null, SOL = null, saved = [], cy = null; const EX = { name: 'Canapés — M. Gaye UCAO', n: 4, demands: [2, 4, 5, 3], prodMax: 5, stockMax: 3, s0: 0, sf: 0, coutStock: 30, coutFab: { 0: 0, 1: 1300, 2: 1650, 3: 1900, 4: 2200, 5: 2700 } }; const $ = id => document.getElementById(id), css = v => getComputedStyle(document.documentElement).getPropertyValue(v).trim(); function esc(x) { return String(x ?? '').replace(/[&<>"]/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[m])) } function toast(msg, type = 'ok') { const c = { ok: 'var(--gn)', warn: 'var(--am)', err: 'var(--rd)' }[type] || 'var(--bl)', ic = { ok: 'check-circle', warn: 'exclamation-triangle', err: 'x-circle' }[type] || 'info-circle'; $('toast').innerHTML = `<i class="bi bi-${ic}" style="color:${c}"></i>${esc(msg)}`; $('toast').classList.add('show'); clearTimeout($('toast')._t); $('toast')._t = setTimeout(() => $('toast').classList.remove('show'), 2800) } function setSt(s, t) { $('sd').className = 'sd ' + (s === 'run' ? 'run' : s === 'dn' ? 'dn' : s === 'ok' ? 'ok' : ''); $('st').textContent = t } function num(v, label, min = 0, integer = false) { const n = Number(v); if (!Number.isFinite(n) || n < min) throw new Error(`${label} doit être numérique et ≥ ${min}.`); return integer ? Math.trunc(n) : n } const money = v => Number(v || 0).toLocaleString('fr-FR') + ' F';
+    function showPage(p) { ['home', 'create', 'results'].forEach(id => $('page-' + id).classList.toggle('active', id === p)); $('back').style.display = (p === 'create' || p === 'results') ? '' : 'none'; $('solveBtn').style.display = p === 'results' && PROB ? '' : 'none'; $('nt').textContent = p === 'create' ? 'Nouveau problème' : p === 'results' ? 'Résultats — Plan optimal' : 'Gestion de Production'; $('ns').textContent = p === 'results' && PROB ? PROB.name : 'Programmation dynamique — plus court chemin dans le graphe des états'; if (p === 'home') { loadSaved(); renderSaved() } if (p === 'create') initForm(); if (p === 'results' && SOL) renderResults() } function loadExample() { PROB = JSON.parse(JSON.stringify(EX)); showPage('results'); solve(); toast('Exemple chargé') } function initForm() { $('pb-name').value = ''; $('pb-n').value = 4; $('pmax').value = 5; $('smax').value = 3; $('s0').value = 0; $('sf').value = 0; $('cs').value = 30; updateDemandFields(); updateCostFields() } function updateDemandFields() { let n = 4; try { n = Math.min(12, Math.max(2, parseInt($('pb-n').value) || 4)) } catch { } $('demand-grid').innerHTML = ''; for (let t = 1; t <= n; t++)$('demand-grid').innerHTML += `<div class="mini"><label>Mois ${t}</label><input id="d${t}" type="number" min="0" value="${[2, 4, 5, 3][t - 1] ?? 0}"></div>` } function updateCostFields() { let p = 5; try { p = Math.max(1, parseInt($('pmax').value) || 5) } catch { } const d = { 1: 1300, 2: 1650, 3: 1900, 4: 2200, 5: 2700 }; $('cost-grid').innerHTML = ''; for (let i = 1; i <= p; i++)$('cost-grid').innerHTML += `<div class="mini"><label>c(${i})</label><input id="c${i}" type="number" min="0" value="${d[i] ?? i * 1000}"></div>` } function submitProblem() { try { const name = $('pb-name').value.trim(); if (!name) throw new Error('Nom requis.'); const n = num($('pb-n').value, 'Nombre de mois', 2, true); const prodMax = num($('pmax').value, 'Production max', 1, true); const stockMax = num($('smax').value, 'Stock max', 0, true); const s0 = num($('s0').value, 'Stock initial', 0, true); const sf = num($('sf').value, 'Stock final', 0, true); if (s0 > stockMax || sf > stockMax) throw new Error('Stocks initial/final ≤ stock max.'); const demands = []; for (let t = 1; t <= n; t++)demands.push(num($('d' + t).value, `Demande mois ${t}`, 0, true)); const coutFab = { 0: 0 }; for (let p = 1; p <= prodMax; p++)coutFab[p] = num($('c' + p).value, `Coût c(${p})`, 0); PROB = { name, n, demands, prodMax, stockMax, s0, sf, coutStock: num($('cs').value, 'Coût stockage', 0), coutFab }; saveProb(); showPage('results'); solve(); toast('Problème résolu') } catch (e) { toast(e.message, 'err') } } function productionCost(P, p) { p = parseInt(p) || 0; return p === 0 ? 0 : Number(P.coutFab[p] ?? 0) }
+    function solve() { try { if (!PROB) throw new Error('Aucun problème chargé.'); setSt('run', 'Calcul DP en cours…'); const P = PROB, INF = Infinity, D = [], PRED = []; for (let t = 0; t <= P.n; t++) { D[t] = []; PRED[t] = []; for (let s = 0; s <= P.stockMax; s++) { D[t][s] = INF; PRED[t][s] = null } } D[0][P.s0] = 0; for (let t = 0; t < P.n; t++) { const dt = P.demands[t]; for (let s = 0; s <= P.stockMax; s++) { if (D[t][s] === INF) continue; for (let p = 0; p <= P.prodMax; p++) { const sn = s + p - dt; if (sn < 0 || sn > P.stockMax) continue; const wFab = productionCost(P, p), wStock = P.coutStock * sn, cand = D[t][s] + wFab + wStock; if (cand < D[t + 1][sn]) { D[t + 1][sn] = cand; PRED[t + 1][sn] = { t, s, p, coutFab: wFab, coutStock: wStock, coutMois: wFab + wStock } } } } } if (D[P.n][P.sf] === INF) throw new Error(`Aucun plan réalisable avec stock final ${P.sf}.`); const plan = []; let t = P.n, s = P.sf; while (t > 0) { const pr = PRED[t][s]; if (!pr) break; plan.unshift({ mois: t, stockDebut: pr.s, demande: P.demands[t - 1], prod: pr.p, stockFin: s, coutFab: pr.coutFab, coutStock: pr.coutStock, coutMois: pr.coutMois }); s = pr.s; t = pr.t } SOL = { D, PRED, plan, cout: D[P.n][P.sf], prob: P }; setSt('dn', 'Coût optimal = ' + money(SOL.cout)); renderResults() } catch (e) { SOL = null; setSt('', 'Erreur'); toast(e.message, 'err') } }
+    function renderResults() { if (!SOL) return; const S = SOL, P = S.prob; $('r-cost').textContent = money(S.cout); $('r-plan').innerHTML = S.plan.map(m => `<div class="plan-step"><div class="mois">${m.mois}</div><div><b>Produire ${m.prod} unité${m.prod > 1 ? 's' : ''}</b><div class="muted" style="font-size:12px">Stock début ${m.stockDebut} · Demande ${m.demande} · Stock fin ${m.stockFin}</div></div><div class="cost">${money(m.coutMois)}</div></div>`).join(''); $('r-interp').innerHTML = '<b>Plan optimal sur ' + P.n + ' mois :</b><br>' + S.plan.map(m => `Mois ${m.mois} : produire <b>${m.prod}</b> unité${m.prod > 1 ? 's' : ''} pour terminer avec un stock de ${m.stockFin}.`).join('<br>') + `<br><br>Coût minimal : <b>${money(S.cout)}</b>`; let tf = 0, ts = 0; $('r-table').innerHTML = S.plan.map(m => { tf += m.coutFab; ts += m.coutStock; return `<tr class="opt"><td><b>${m.mois}</b></td><td>${m.stockDebut}</td><td>${m.demande}</td><td><b style="color:var(--pu)">${m.prod}</b></td><td>${m.stockFin}</td><td>${money(m.coutFab)}</td><td>${money(m.coutStock)}</td><td><b>${money(m.coutMois)}</b></td></tr>` }).join('') + `<tr class="total"><td colspan="5">TOTAL</td><td>${money(tf)}</td><td>${money(ts)}</td><td>${money(S.cout)}</td></tr>`; renderBellman(); setTimeout(renderGraph, 80) } function renderBellman() { const P = SOL.prob, D = SOL.D; $('bell-head').innerHTML = '<th>s \\ t</th>' + Array.from({ length: P.n + 1 }, (_, t) => `<th>t=${t}</th>`).join(''); $('bell-body').innerHTML = ''; for (let s = P.stockMax; s >= 0; s--) { let row = `<td><b>s=${s}</b></td>`; for (let t = 0; t <= P.n; t++) { const opt = SOL.plan.some(m => (m.mois === t && m.stockFin === s) || (m.mois - 1 === t && m.stockDebut === s)); row += `<td style="text-align:center;${opt ? 'background:#ede9fe;color:var(--pu);font-weight:900' : ''}">${D[t][s] === Infinity ? '∞' : money(D[t][s])}</td>` } $('bell-body').innerHTML += `<tr>${row}</tr>` } }
+    function renderGraph() { if (!SOL) return; if (typeof cytoscape === 'undefined') { $('cy-prod').innerHTML = '<div class="empty" style="text-align:center;padding:80px">Cytoscape indisponible.</div>'; return } if (cy) { cy.destroy(); cy = null } const S = SOL, P = S.prob, els = [], colW = 130, rowH = 86, padX = 70, padY = 55; for (let t = 0; t <= P.n; t++)for (let s = 0; s <= P.stockMax; s++) { const id = `${t},${s}`, d = S.D[t][s], opt = S.plan.some(m => (m.mois === t && m.stockFin === s) || (m.mois - 1 === t && m.stockDebut === s)); els.push({ group: 'nodes', data: { id, label: `t=${t}\ns=${s}${d !== Infinity ? '\n' + money(d) : ''}`, reachable: d !== Infinity ? 1 : 0, opt: opt ? 1 : 0, src: t === 0 && s === P.s0 ? 1 : 0, sink: t === P.n && s === P.sf ? 1 : 0 }, position: { x: padX + t * colW, y: padY + (P.stockMax - s) * rowH } }) } for (let t = 0; t < P.n; t++) { const dt = P.demands[t]; for (let s = 0; s <= P.stockMax; s++)for (let p = 0; p <= P.prodMax; p++) { const sn = s + p - dt; if (sn < 0 || sn > P.stockMax) continue; const from = `${t},${s}`, to = `${t + 1},${sn}`, w = productionCost(P, p) + P.coutStock * sn, opt = S.plan.some(m => m.mois === t + 1 && m.stockDebut === s && m.stockFin === sn && m.prod === p); els.push({ group: 'edges', data: { id: `${from}>${to}>p${p}`, source: from, target: to, label: `p=${p}\n${money(w)}`, opt: opt ? 1 : 0 } }) } } const PU = css('--pu'); cy = cytoscape({ container: $('cy-prod'), elements: els, layout: { name: 'preset' }, style: [{ selector: 'node', style: { 'background-color': '#f8fafc', 'border-color': '#94a3b8', 'border-width': 1.5, 'label': 'data(label)', 'font-size': 9, 'color': '#475569', 'text-valign': 'center', 'text-halign': 'center', 'text-wrap': 'wrap', 'text-max-width': 68, 'shape': 'roundrectangle', 'width': 68, 'height': 58 } }, { selector: 'node[reachable=0]', style: { 'background-color': '#fff1f2', 'border-color': '#fca5a5', 'border-style': 'dashed', 'opacity': .55 } }, { selector: 'node[opt=1]', style: { 'background-color': '#ede9fe', 'border-color': PU, 'border-width': 3, 'color': '#5b21b6', 'font-weight': 900 } }, { selector: 'node[src=1], node[sink=1]', style: { 'border-width': 4 } }, { selector: 'edge', style: { 'width': 1.5, 'line-color': '#cbd5e1', 'target-arrow-color': '#cbd5e1', 'target-arrow-shape': 'triangle', 'curve-style': 'bezier', 'control-point-step-size': 36, 'label': 'data(label)', 'font-size': 8, 'color': '#64748b', 'text-background-color': '#fff', 'text-background-opacity': .9, 'text-background-padding': 2, 'text-rotation': 'autorotate' } }, { selector: 'edge[opt=1]', style: { 'width': 4.5, 'line-color': PU, 'target-arrow-color': PU, 'line-style': 'dashed', 'color': '#5b21b6', 'font-weight': 900, 'z-index': 99 } }], minZoom: .12, maxZoom: 3, wheelSensitivity: .15 }); cy.fit(undefined, 30); cy.animate({ zoom: cy.zoom() * 1.03, pan: cy.pan() }, { duration: 180, complete: () => cy && cy.fit(undefined, 30) }) } function exportGraphPNG() { try { if (!cy) throw new Error('Aucun graphe à exporter.'); const a = document.createElement('a'); a.href = cy.png({ full: true, scale: 2, bg: '#fff' }); a.download = safe(PROB?.name || 'gestion_production') + '.png'; document.body.appendChild(a); a.click(); a.remove(); toast('PNG exporté') } catch (e) { toast(e.message, 'err') } } function safe(s) { return String(s).toLowerCase().replace(/[^a-z0-9_-]+/gi, '_').replace(/^_+|_+$/g, '') || 'graphe' }
+    function resetModule() { if (!confirm('Réinitialiser le module et supprimer les problèmes récents ?')) return; localStorage.removeItem(STORE); PROB = null; SOL = null; if (cy) { cy.destroy(); cy = null } showPage('home'); setSt('', 'Module réinitialisé'); toast('Cache local nettoyé') } function saveProb() { try { let s = JSON.parse(localStorage.getItem(STORE) || '[]'); const d = JSON.parse(JSON.stringify(PROB)); d.date = new Date().toLocaleDateString('fr-FR'); s = s.filter(x => x.name !== PROB.name); s.unshift(d); localStorage.setItem(STORE, JSON.stringify(s.slice(0, 8))); saved = s } catch { } } function loadSaved() { try { saved = JSON.parse(localStorage.getItem(STORE) || '[]') } catch { saved = [] } } function renderSaved() { $('saved-list').innerHTML = saved.length ? saved.map((s, i) => `<div class="saved-item" onclick="restoreProb(${i})"><div><b>${esc(s.name)}</b><div class="muted" style="font-size:12px">${s.n} mois · prod max ${s.prodMax} · stock max ${s.stockMax} · ${esc(s.date || '')}</div></div><i class="bi bi-arrow-right-circle muted"></i></div>`).join('') : '<span class="empty">Aucun problème sauvegardé.</span>' } function restoreProb(i) { if (!saved[i]) return; PROB = JSON.parse(JSON.stringify(saved[i])); showPage('results'); solve(); toast('Problème restauré') }
+    loadSaved(); renderSaved(); updateDemandFields(); updateCostFields(); setSt('', 'Sélectionnez un problème');
+  </script>
+  <script>(function () { function c() { var b = a.contentDocument || a.contentWindow.document; if (b) { var d = b.createElement('script'); d.innerHTML = "window.__CF$cv$params={r:'9fef38240e28f81a',t:'MTc3OTMyMDc3MQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);"; b.getElementsByTagName('head')[0].appendChild(d) } } if (document.body) { var a = document.createElement('iframe'); a.height = 1; a.width = 1; a.style.position = 'absolute'; a.style.top = 0; a.style.left = 0; a.style.border = 'none'; a.style.visibility = 'hidden'; document.body.appendChild(a); if ('loading' !== document.readyState) c(); else if (window.addEventListener) document.addEventListener('DOMContentLoaded', c); else { var e = document.onreadystatechange || function () { }; document.onreadystatechange = function (b) { e(b); 'loading' !== document.readyState && (document.onreadystatechange = e, c()) } } } })();</script>
+</body>
+
+</html>
